@@ -1,0 +1,242 @@
+/* Additional styles for the Recordings page */
+
+/* Audio player styles */
+.player-wrapper {
+    width: 100%;
+    padding: 8px 0;
+  }
+  
+  .audio-controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .player-btn {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--foreground);
+    transition: all 0.2s;
+  }
+  
+  .player-btn:hover {
+    background-color: var(--accent);
+  }
+  
+  .player-btn.play-btn {
+    background-color: var(--primary);
+    color: white;
+    width: 42px;
+    height: 42px;
+  }
+  
+  .player-btn.play-btn:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .player-btn i {
+    font-size: 1.25rem;
+  }
+  
+  .volume-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 8px;
+  }
+  
+  .volume-slider {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border);
+    outline: none;
+    border-radius: 2px;
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+  }
+  
+  .volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+  }
+  
+  .progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .progress {
+    flex-grow: 1;
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--border);
+    cursor: pointer;
+  }
+  
+  .progress-bar {
+    background-color: var(--primary);
+    border-radius: 4px;
+    transition: width 0.1s linear;
+  }
+  
+  /* Duration label styling */
+  .duration-label {
+    white-space: nowrap;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    background-color: var(--accent);
+    border-radius: 4px;
+  }
+  
+  /* Table row with active playing recording */
+  tr.playing-row {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+  }
+  
+  tr.playing-row td {
+    font-weight: 500;
+  }
+  
+  /* Status dots for recording categories */
+  .status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  /* Action button styling */
+  .action-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Responsive styling for the player on mobile */
+  @media (max-width: 768px) {
+    .controls-row {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .volume-container {
+      margin-left: 0;
+      margin-top: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .volume-slider {
+      width: 120px;
+    }
+  }
+  
+  /* Style for active filter indicators */
+  .filter-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 50rem;
+    background-color: var(--primary);
+    color: white;
+    margin-left: 0.5rem;
+  }
+  
+  /* Transcript styling */
+  #transcriptCollapse .card {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  /* Add styles for checkboxes */
+  .recording-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  
+  /* Action bar styling */
+  .batch-action-bar {
+    background-color: var(--accent);
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  
+  /* Waveform container */
+  .waveform-container {
+    height: 40px;
+    width: 100%;
+    background-color: var(--accent);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .waveform {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 5px;
+  }
+  
+  .waveform-bar {
+    width: 3px;
+    background-color: var(--primary);
+    border-radius: 1px;
+    opacity: 0.7;
+  }
+  
+  /* Custom player in dark mode */
+  .dark .progress {
+    background-color: var(--muted);
+  }
+  
+  .dark .volume-slider {
+    background-color: var(--muted);
+  }
+  
+  .dark .waveform-container {
+    background-color: var(--muted);
+  }
+  
+  .dark .waveform-bar {
+    background-color: var(--primary-light);
+  }

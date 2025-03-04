@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XDial Networks Reports</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- DatePicker CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-telephone-fill text-primary me-2"></i>
+        <span class="fw-bold nav-text">XDialNetworks Admin</span>
+      </div>
+      <button class="btn btn-sm p-1" id="sidebarToggle">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    <div class="sidebar-nav">
+      <nav>
+        <a href="index.html" class="nav-link">
+          <i class="bi bi-house-door"></i>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="#" class="nav-link">
+          <i class="bi bi-person"></i>
+          <span class="nav-text">Users</span>
+        </a>
+        <a href="#" class="nav-link">
+          <i class="bi bi-bar-chart"></i>
+          <span class="nav-text">Campaigns</span>
+        </a>
+        <a href="#" class="nav-link">
+          <i class="bi bi-chat-square-text"></i>
+          <span class="nav-text">Scripts</span>
+        </a>
+        <a href="#" class="nav-link">
+          <i class="bi bi-telephone"></i>
+          <span class="nav-text">Lists</span>
+        </a>
+        <a href="reports.html" class="nav-link active">
+          <i class="bi bi-activity"></i>
+          <span class="nav-text">Reports</span>
+        </a>
+        <a href="#" class="nav-link">
+          <i class="bi bi-gear"></i>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <div class="d-flex align-items-center">
+        <div class="avatar">A</div>
+        <div class="ms-3 nav-text">
+          <p class="mb-0 fw-medium small">Admin User</p>
+          <p class="mb-0 text-muted small">admin@xdial.com</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-telephone-fill text-primary me-2"></i>
+          <h1 class="h5 fw-semibold mb-0">XdialNetworks Reports</h1>
+        </div>
+        <nav class="d-none d-md-flex">
+          <a href="reports.html" class="btn btn-primary btn-sm me-2">Reports</a>
+          <button class="btn btn-outline btn-sm me-2">Users</button>
+          <button class="btn btn-outline btn-sm me-2">Campaigns</button>
+          <button class="btn btn-outline btn-sm me-2">Lists</button>
+          <button class="btn btn-outline btn-sm">Admin</button>
+        </nav>
+        <button class="sidebar-toggle d-md-none btn btn-sm" style="display: none;">
+          <i class="bi bi-list"></i>
+        </button>
+        <div class="theme-toggle ms-3" id="themeToggle">
+          <i class="bi bi-sun"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- Reports Content -->
+    <div class="container-fluid py-4">
+      <!-- Reports Title and Controls -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <h2 class="fw-bold">Call Reports</h2>
+          <p class="text-muted">View and analyze call data, responses, and agent performance</p>
+        </div>
+        <div class="col-md-6 d-flex flex-wrap justify-content-md-end align-items-center gap-2">
+          <p class="text-muted small mb-0 me-2">Last updated: <span id="lastUpdated">2025-03-04 10:11:40</span></p>
+          <button class="btn btn-outline btn-sm" id="refreshBtn">
+            <i class="bi bi-arrow-repeat me-1"></i> Refresh
+          </button>
+          <button class="btn btn-outline btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Card -->
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Filters</h5>
+          <button class="btn btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+            <i class="bi bi-chevron-down"></i>
+          </button>
+        </div>
+        <div class="collapse show" id="filtersCollapse">
+          <div class="card-body">
+            <form id="reportFilters">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Date Range</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control date-range-picker" placeholder="Select dates" id="dateRange">
+                    <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Campaign</label>
+                  <select class="form-select" id="campaignFilter">
+                    <option value="all">All Campaigns</option>
+                    <option value="001" selected>Stonage Communication</option>
+                    <option value="002">LMS Outreach</option>
+                    <option value="003">Customer Service</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Response Category</label>
+                  <select class="form-select" id="responseFilter">
+                    <option value="all">All Responses</option>
+                    <option value="ANSWER_MACHINE">Answer Machine</option>
+                    <option value="INTERESTED">Interested</option>
+                    <option value="NOT_INTERESTED">Not Interested</option>
+                    <option value="DO_NOT_CALL">Do Not Call</option>
+                    <option value="DNQ">DNQ</option>
+                    <option value="UNKNOWN">Unknown</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Agent</label>
+                  <select class="form-select" id="agentFilter">
+                    <option value="all">All Agents</option>
+                    <option value="stone">Stone</option>
+                    <option value="sarah">Sarah</option>
+                    <option value="james">James</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline btn-sm" id="resetFilters">
+                      <i class="bi bi-x-circle me-1"></i> Reset
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="applyFilters">
+                      <i class="bi bi-funnel me-1"></i> Apply Filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="card stat-card stat-card-blue">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2">Total Calls</h6>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="stat-value">15,138</div>
+                <i class="bi bi-telephone-fill stat-icon text-primary"></i>
+              </div>
+              <p class="small text-muted mb-0">All calls in selected period</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card stat-card stat-card-green">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2">Interested</h6>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="stat-value">327</div>
+                <i class="bi bi-check-circle stat-icon text-success"></i>
+              </div>
+              <p class="small text-muted mb-0">2.2% of total calls</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card stat-card stat-card-amber">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2">Answer Machines</h6>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="stat-value">9,521</div>
+                <i class="bi bi-voicemail stat-icon text-warning"></i>
+              </div>
+              <p class="small text-muted mb-0">62.9% of total calls</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card stat-card stat-card-purple">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2">Do Not Call</h6>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="stat-value">284</div>
+                <i class="bi bi-slash-circle stat-icon text-purple"></i>
+              </div>
+              <p class="small text-muted mb-0">1.9% of total calls</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Table -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <h5 class="card-title mb-0">Call Records</h5>
+            <div class="d-flex gap-2 align-items-center">
+              <div class="form-group">
+                <select class="form-select form-select-sm" id="recordsPerPage">
+                  <option value="10">10 per page</option>
+                  <option value="25" selected>25 per page</option>
+                  <option value="50">50 per page</option>
+                  <option value="100">100 per page</option>
+                </select>
+              </div>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control" placeholder="Search records..." id="searchRecords">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" id="reportTable">
+              <thead class="table-light">
+                <tr>
+                  <th class="sortable" data-sort="id">#</th>
+                  <th class="sortable" data-sort="unique_id">Unique ID</th>
+                  <th class="sortable" data-sort="speech_text">Speech Text</th>
+                  <th class="sortable" data-sort="response_category">Response Category</th>
+                  <th class="sortable" data-sort="timestamp">Timestamp</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>1245678799</td>
+                  <td>how are you i am doing will</td>
+                  <td><span class="badge bg-secondary">ANSWER_MACHINE</span></td>
+                  <td>2025-03-04 10:11:40</td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button type="button" class="btn btn-outline-secondary" title="Edit" data-bs-toggle="modal" data-bs-target="#editRecordModal" data-id="1">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary" title="Listen" data-bs-toggle="modal" data-bs-target="#audioPlayerModal" data-id="1">
+                        <i class="bi bi-headphones"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-danger" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" data-id="1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- More rows would be populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="text-muted small">
+              Showing <span id="startRecord">1</span>-<span id="endRecord">25</span> of <span id="totalRecords">15,138</span> records
+            </div>
+            <nav aria-label="Report pagination">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="#">Next</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response Distribution Chart Card -->
+      <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+          <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0">Response Distribution</h5>
+              <div class="chart-controls">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-outline-secondary active" id="barChartBtn">Bar</button>
+                  <button type="button" class="btn btn-outline-secondary" id="pieChartBtn">Pie</button>
+                </div>
+              </div>
+            </div>
+            <div class="card-body chart-container">
+              <canvas id="responseDistributionChart" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="card-title">Response Categories</h5>
+            </div>
+            <div class="card-body p-0">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="status-dot bg-success"></div>
+                    INTERESTED
+                  </div>
+                  <span class="badge bg-primary rounded-pill">327</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="status-dot bg-secondary"></div>
+                    ANSWER_MACHINE
+                  </div>
+                  <span class="badge bg-primary rounded-pill">9,521</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="status-dot bg-danger"></div>
+                    NOT_INTERESTED
+                  </div>
+                  <span class="badge bg-primary rounded-pill">4,256</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="status-dot bg-danger"></div>
+                    DO_NOT_CALL
+                  </div>
+                  <span class="badge bg-primary rounded-pill">284</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="status-dot bg-warning"></div>
+                    DNQ
+                  </div>
+                  <span class="badge bg-primary rounded-pill">176</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="status-dot bg-dark"></div>
+                    UNKNOWN
+                  </div>
+                  <span class="badge bg-primary rounded-pill">574</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Record Modal -->
+  <div class="modal fade" id="editRecordModal" tabindex="-1" aria-labelledby="editRecordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editRecordModalLabel">Edit Call Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editRecordForm">
+            <input type="hidden" id="editRecordId" value="1">
+            <div class="mb-3">
+              <label for="editUniqueId" class="form-label">Unique ID</label>
+              <input type="text" class="form-control" id="editUniqueId" value="1245678799" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="editSpeechText" class="form-label">Speech Text</label>
+              <textarea class="form-control" id="editSpeechText" rows="3">how are you i am doing will</textarea>
+            </div>
+            <div class="mb-3">
+              <label for="editResponseCategory" class="form-label">Response Category</label>
+              <select class="form-select" id="editResponseCategory">
+                <option value="ANSWER_MACHINE" selected>ANSWER_MACHINE</option>
+                <option value="INTERESTED">INTERESTED</option>
+                <option value="NOT_INTERESTED">NOT_INTERESTED</option>
+                <option value="DO_NOT_CALL">DO_NOT_CALL</option>
+                <option value="DNQ">DNQ</option>
+                <option value="UNKNOWN">UNKNOWN</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="editTimestamp" class="form-label">Timestamp</label>
+              <input type="text" class="form-control" id="editTimestamp" value="2025-03-04 10:11:40" readonly>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveRecordChanges">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Player Modal -->
+  <div class="modal fade" id="audioPlayerModal" tabindex="-1" aria-labelledby="audioPlayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="audioPlayerModalLabel">Call Recording</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-3">
+            <p class="mb-1 fw-bold">ID: <span id="recordingId">1245678799</span></p>
+            <p class="text-muted small">Timestamp: <span id="recordingTimestamp">2025-03-04 10:11:40</span></p>
+          </div>
+          <div class="d-flex justify-content-center">
+            <audio controls class="w-100">
+              <source src="#" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+          <div class="mt-3">
+            <p class="mb-2 fw-bold">Transcript:</p>
+            <p id="recordingTranscript" class="p-2 border rounded">how are you i am doing will</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Download Recording</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete this record? This action cannot be undone.</p>
+          <p class="fw-bold">Record ID: <span id="deleteRecordId">1</span></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+  <script src="reports.js"></script>
+</body>
+</html>

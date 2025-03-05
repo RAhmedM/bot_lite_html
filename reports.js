@@ -30,7 +30,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to process API data and update the dashboard
   async function initializeDashboard() {
     // Show loading state
-    document.getElementById('refreshBtn').innerHTML = '<i class="bi bi-arrow-repeat me-1 animate-spin"></i> Loading...';
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1 animate-spin"></i> Loading...';
+    }
     
     // Fetch data from API
     const apiData = await fetchDataFromAPI();
@@ -45,21 +48,37 @@ document.addEventListener('DOMContentLoaded', function() {
       populateTable(callRecords);
       
       // Update summary counts
-      document.getElementById('totalRecords').textContent = callRecords.length;
-      document.getElementById('startRecord').textContent = callRecords.length > 0 ? '1' : '0';
-      document.getElementById('endRecord').textContent = Math.min(25, callRecords.length);
+      const totalRecordsElement = document.getElementById('totalRecords');
+      if (totalRecordsElement) {
+        totalRecordsElement.textContent = callRecords.length;
+      }
+      
+      const startRecordElement = document.getElementById('startRecord');
+      if (startRecordElement) {
+        startRecordElement.textContent = callRecords.length > 0 ? '1' : '0';
+      }
+      
+      const endRecordElement = document.getElementById('endRecord');
+      if (endRecordElement) {
+        endRecordElement.textContent = Math.min(25, callRecords.length);
+      }
       
       // Update timestamp
       const now = new Date();
       const formattedDate = formatDate(now);
-      document.getElementById('lastUpdated').textContent = formattedDate;
+      const lastUpdatedElement = document.getElementById('lastUpdated');
+      if (lastUpdatedElement) {
+        lastUpdatedElement.textContent = formattedDate;
+      }
       
       // Show success toast
       showToast('Data Loaded', `Successfully loaded ${callRecords.length} records`, 'success');
     }
     
     // Reset loading state
-    document.getElementById('refreshBtn').innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Refresh';
+    if (refreshBtn) {
+      refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Refresh';
+    }
   }
   
   // Process the response data for charts and statistics
@@ -84,20 +103,79 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate total for percentages
     const totalCalls = responseData.reduce((sum, item) => sum + item.count, 0);
     
-    // Update summary stats
-    document.querySelector('.stat-card-blue .stat-value').textContent = totalCalls;
-    document.querySelector('.stat-card-green .stat-value').textContent = categoryCounts['INTERESTED'] || 0;
-    document.querySelector('.stat-card-amber .stat-value').textContent = categoryCounts['ANSWER_MACHINE'] || 0;
-    document.querySelector('.stat-card-purple .stat-value').textContent = categoryCounts['DO_NOT_CALL'] || 0;
+    // For the main dashboard cards (the newer UI based on screenshot)
+    try {
+      // Update total calls
+      const totalCallsElement = document.querySelector('.Total-Calls, #totalCalls');
+      if (totalCallsElement) {
+        totalCallsElement.textContent = totalCalls;
+      }
+
+      // Update Interested
+      const interestedElement = document.querySelector('.Interested, #interested');
+      if (interestedElement) {
+        interestedElement.textContent = categoryCounts['INTERESTED'] || 0;
+      }
+
+      // Update Answer Machines
+      const answerMachinesElement = document.querySelector('.Answer-Machines, #answerMachines');
+      if (answerMachinesElement) {
+        answerMachinesElement.textContent = categoryCounts['ANSWER_MACHINE'] || 0;
+      }
+
+      // Update Do Not Call
+      const doNotCallElement = document.querySelector('.Do-Not-Call, #doNotCall');
+      if (doNotCallElement) {
+        doNotCallElement.textContent = categoryCounts['DO_NOT_CALL'] || 0;
+      }
+
+      // Update percentages
+      const interestedPercentage = totalCalls > 0 ? ((categoryCounts['INTERESTED'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+      const answerMachinePercentage = totalCalls > 0 ? ((categoryCounts['ANSWER_MACHINE'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+      const doNotCallPercentage = totalCalls > 0 ? ((categoryCounts['DO_NOT_CALL'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+      const unknownPercentage = totalCalls > 0 ? ((categoryCounts['UNKNOWN'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+
+      // Update percentage elements
+      const interestedPercentageElement = document.querySelector('.interested-percentage');
+      if (interestedPercentageElement) {
+        interestedPercentageElement.textContent = `${interestedPercentage}% of total calls`;
+      }
+
+      const answerMachinePercentageElement = document.querySelector('.answer-machine-percentage');
+      if (answerMachinePercentageElement) {
+        answerMachinePercentageElement.textContent = `${answerMachinePercentage}% of total calls`;
+      }
+
+      const doNotCallPercentageElement = document.querySelector('.do-not-call-percentage');
+      if (doNotCallPercentageElement) {
+        doNotCallPercentageElement.textContent = `${doNotCallPercentage}% of total calls`;
+      }
+    } catch (error) {
+      console.error("Error updating dashboard cards:", error);
+    }
     
-    // Update percentages
-    const interestedPercentage = totalCalls > 0 ? ((categoryCounts['INTERESTED'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
-    const answerMachinePercentage = totalCalls > 0 ? ((categoryCounts['ANSWER_MACHINE'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
-    const doNotCallPercentage = totalCalls > 0 ? ((categoryCounts['DO_NOT_CALL'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
-    
-    document.querySelector('.stat-card-green + p').textContent = `${interestedPercentage}% of total calls`;
-    document.querySelector('.stat-card-amber + p').textContent = `${answerMachinePercentage}% of total calls`;
-    document.querySelector('.stat-card-purple + p').textContent = `${doNotCallPercentage}% of total calls`;
+    // For the older UI as well (the card-based UI)
+    try {
+      // Update summary stats
+      document.querySelector('.stat-card-blue .stat-value').textContent = totalCalls;
+      document.querySelector('.stat-card-green .stat-value').textContent = categoryCounts['INTERESTED'] || 0;
+      document.querySelector('.stat-card-amber .stat-value').textContent = categoryCounts['ANSWER_MACHINE'] || 0;
+      document.querySelector('.stat-card-purple .stat-value').textContent = categoryCounts['DO_NOT_CALL'] || 0;
+      
+      // Update percentages
+      const interestedPercentage = totalCalls > 0 ? ((categoryCounts['INTERESTED'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+      const answerMachinePercentage = totalCalls > 0 ? ((categoryCounts['ANSWER_MACHINE'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+      const doNotCallPercentage = totalCalls > 0 ? ((categoryCounts['DO_NOT_CALL'] || 0) / totalCalls * 100).toFixed(1) : '0.0';
+      
+      const percentageElements = document.querySelectorAll('.small.text-muted.mb-0');
+      if (percentageElements.length >= 3) {
+        percentageElements[1].textContent = `${interestedPercentage}% of total calls`;
+        percentageElements[2].textContent = `${answerMachinePercentage}% of total calls`;
+        percentageElements[3].textContent = `${doNotCallPercentage}% of total calls`;
+      }
+    } catch (error) {
+      console.error("Error updating card-based UI:", error);
+    }
     
     // Update response categories list
     const categoryListItems = document.querySelectorAll('.list-group-item');
@@ -110,25 +188,62 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
+    // Update the newer UI response categories if present
+    try {
+      responseData.forEach(item => {
+        const categoryElement = document.querySelector(`.${item.category}-count, #${item.category.toLowerCase()}Count`);
+        if (categoryElement) {
+          categoryElement.textContent = item.count;
+        }
+        
+        const percentageElement = document.querySelector(`.${item.category}-percentage, #${item.category.toLowerCase()}Percentage`);
+        if (percentageElement) {
+          const percentage = totalCalls > 0 ? ((item.count / totalCalls) * 100).toFixed(1) : '0.0';
+          percentageElement.textContent = `${percentage}%`;
+        }
+      });
+    } catch (error) {
+      console.error("Error updating category counts in newer UI:", error);
+    }
+    
     // Initialize or update charts
     updateCharts(responseData, totalCalls);
   }
   
   // Chart variables for global access
-  let responseChart;
-  const responseCtx = document.getElementById('responseDistributionChart').getContext('2d');
+  let responseChart = null;
+  const responseCtx = document.getElementById('responseDistributionChart') ? 
+    document.getElementById('responseDistributionChart').getContext('2d') : null;
   
   // Function to update charts with new data
   function updateCharts(responseData, totalCalls) {
+    // Make sure we have the chart context available
+    if (!responseCtx) {
+      console.warn('Chart context not available - skipping chart creation');
+      return;
+    }
+    
     // Add chart toggle functionality
     const barChartBtn = document.getElementById('barChartBtn');
     const pieChartBtn = document.getElementById('pieChartBtn');
+    
+    if (!barChartBtn || !pieChartBtn) {
+      console.warn('Chart toggle buttons not found - skipping chart creation');
+      return;
+    }
+    
+    // First, ensure any existing chart is destroyed
+    if (responseChart) {
+      responseChart.destroy();
+      responseChart = null;
+    }
     
     // Function to create bar chart
     function createBarChart() {
       // Destroy existing chart if it exists
       if (responseChart) {
         responseChart.destroy();
+        responseChart = null;
       }
       
       // Create labels with percentages
@@ -137,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${item.category} (${percentage}%)`;
       });
       
-      // Create bar chart
+      // Create bar chart with fixed height
       responseChart = new Chart(responseCtx, {
         type: 'bar',
         data: {
@@ -205,6 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Destroy existing chart if it exists
       if (responseChart) {
         responseChart.destroy();
+        responseChart = null;
       }
       
       // Create pie chart
@@ -281,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add responsive handling for the chart
     window.addEventListener('resize', function() {
       const chartContainer = document.querySelector('.chart-container');
-      if (chartContainer) {
+      if (chartContainer && responseChart) {
         // Adjust chart height based on available width
         if (window.innerWidth < 768) {
           if (pieChartBtn.classList.contains('active')) {
@@ -295,6 +411,13 @@ document.addEventListener('DOMContentLoaded', function() {
         responseChart.update();
       }
     });
+    
+    // Ensure chart container has a constrained height
+    const chartContainer = document.querySelector('.chart-container');
+    if (chartContainer) {
+      // Set a fixed height to prevent expansion
+      chartContainer.style.height = '300px';
+    }
   }
   
   // Populate the table with data
@@ -403,6 +526,37 @@ document.addEventListener('DOMContentLoaded', function() {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
 
+  // Function to create mock data if API fails (for development/demo purposes)
+  function createMockData() {
+    return [
+      {"id":"1","unique_id":"12456789799","speech_text":"how are you i am doning willl","response_category":"ANSWER_MACHINE","timestamp":"2025-03-04 10:11:40"},
+      {"id":"2","unique_id":"1741103427.200215","speech_text":"I'm good how are you","response_category":"UNKNOWN","timestamp":"2025-03-04 10:50:48"},
+      {"id":"3","unique_id":"1741103427.200215","speech_text":"yeah I have uh that","response_category":"UNKNOWN","timestamp":"2025-03-04 10:51:06"},
+      {"id":"4","unique_id":"1741103771.200218","speech_text":"I'm good","response_category":"UNKNOWN","timestamp":"2025-03-04 10:56:22"},
+      {"id":"5","unique_id":"1741103771.200218","speech_text":"yes I have active","response_category":"INTERESTED","timestamp":"2025-03-04 10:56:41"},
+      {"id":"6","unique_id":"1741104241.200233","speech_text":"I'm good","response_category":"UNKNOWN","timestamp":"2025-03-04 11:04:13"},
+      {"id":"7","unique_id":"1741104241.200233","speech_text":"yes I have not","response_category":"INTERESTED","timestamp":"2025-03-04 11:04:31"},
+      {"id":"8","unique_id":"1741104433.200248","speech_text":"I'm good","response_category":"UNKNOWN","timestamp":"2025-03-04 11:07:24"},
+      {"id":"9","unique_id":"1741104433.200248","speech_text":"no","response_category":"UNKNOWN","timestamp":"2025-03-04 11:07:42"}
+    ];
+  }
+
+  // Modified fetchDataFromAPI to use mock data as fallback
+  async function fetchDataFromAPI() {
+    try {
+      const response = await fetch('https://dialerai.originnet.com.pk/xlite_dashboard/fetch_table.php');
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching data from API:', error);
+      showToast('Using Fallback Data', 'Unable to fetch data from the server. Using sample data instead.', 'warning');
+      return createMockData();
+    }
+  }
+  
   // Initialize the dashboard with API data
   initializeDashboard();
 

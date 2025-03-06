@@ -1,0 +1,15 @@
+{
+    "name": "recordings-proxy",
+    "version": "1.0.0",
+    "description": "Proxy server for XDial call recordings",
+    "main": "recordings-proxy.js",
+    "scripts": {
+      "start": "node recordings-proxy.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "axios": "^1.6.7",
+      "cheerio": "^1.0.0-rc.12",
+      "cors": "^2.8.5"
+    }
+  }

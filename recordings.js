@@ -1,530 +1,723 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize date picker
-    flatpickr("#dateRange", {
-      mode: "range",
-      dateFormat: "Y-m-d",
-      defaultDate: [new Date().setDate(new Date().getDate() - 7), new Date()],
-      maxDate: "today"
-    });
+  // Base URL for the proxy server
+  const PROXY_URL = "http://localhost:3000/api/";
   
-    // Sample data for call recordings
-    const callRecordings = [
-      { id: 1, unique_id: '1245678799', timestamp: '2025-03-04 10:11:40', duration: 12, response_category: 'ANSWER_MACHINE', agent: 'stone', speech_text: 'hello this is john please leave a message after the beep', audio_url: 'recordings/1245678799.mp3' },
-      { id: 2, unique_id: '1245678800', timestamp: '2025-03-04 10:12:15', duration: 24, response_category: 'NOT_INTERESTED', agent: 'stone', speech_text: 'no i am not interested thank you please remove me from your list', audio_url: 'recordings/1245678800.mp3' },
-      { id: 3, unique_id: '1245678801', timestamp: '2025-03-04 10:15:22', duration: 37, response_category: 'INTERESTED', agent: 'sarah', speech_text: 'yes i would like to know more about your offer please tell me more about the pricing', audio_url: 'recordings/1245678801.mp3' },
-      { id: 4, unique_id: '1245678802', timestamp: '2025-03-04 10:17:45', duration: 18, response_category: 'DO_NOT_CALL', agent: 'sarah', speech_text: 'please remove me from your list do not call me again', audio_url: 'recordings/1245678802.mp3' },
-      { id: 5, unique_id: '1245678803', timestamp: '2025-03-04 10:20:33', duration: 9, response_category: 'UNKNOWN', agent: 'james', speech_text: 'this is not a good time for me', audio_url: 'recordings/1245678803.mp3' },
-      { id: 6, unique_id: '1245678804', timestamp: '2025-03-04 10:25:11', duration: 22, response_category: 'DNQ', agent: 'james', speech_text: 'i do not qualify for this offer because i am not a homeowner', audio_url: 'recordings/1245678804.mp3' },
-      { id: 7, unique_id: '1245678805', timestamp: '2025-03-04 10:30:40', duration: 42, response_category: 'INTERESTED', agent: 'stone', speech_text: 'can you call me later this afternoon i am interested but cant talk right now', audio_url: 'recordings/1245678805.mp3' },
-      { id: 8, unique_id: '1245678806', timestamp: '2025-03-04 10:35:12', duration: 7, response_category: 'ANSWER_MACHINE', agent: 'sarah', speech_text: 'hello this is johns voicemail leave a message', audio_url: 'recordings/1245678806.mp3' },
-      { id: 9, unique_id: '1245678807', timestamp: '2025-03-04 10:40:55', duration: 15, response_category: 'NOT_INTERESTED', agent: 'james', speech_text: 'no calls please email me instead', audio_url: 'recordings/1245678807.mp3' },
-      { id: 10, unique_id: '1245678808', timestamp: '2025-03-04 10:45:23', duration: 8, response_category: 'NOT_INTERESTED', agent: 'stone', speech_text: 'i already have that service', audio_url: 'recordings/1245678808.mp3' },
-      { id: 11, unique_id: '1245678809', timestamp: '2025-03-04 10:50:17', duration: 28, response_category: 'INTERESTED', agent: 'sarah', speech_text: 'id like to hear more can you explain the terms in detail', audio_url: 'recordings/1245678809.mp3' },
-      { id: 12, unique_id: '1245678810', timestamp: '2025-03-04 11:05:32', duration: 6, response_category: 'ANSWER_MACHINE', agent: 'james', speech_text: 'you have reached the office of dr smith', audio_url: 'recordings/1245678810.mp3' }
-    ];
+  // DOM Elements
+  const recordingsTable = document.getElementById('recordingsTable');
+  const audioPlayer = document.getElementById('audioPlayer');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const rewindBtn = document.getElementById('rewindBtn');
+  const forwardBtn = document.getElementById('forwardBtn');
+  const muteBtn = document.getElementById('muteBtn');
+  const volumeSlider = document.getElementById('volumeSlider');
+  const currentTime = document.getElementById('currentTime');
+  const duration = document.getElementById('duration');
+  const audioProgress = document.getElementById('audioProgress');
+  const connectionStatus = document.getElementById('connectionStatus');
+  const recordingsError = document.getElementById('recordingsError');
+  const currentRecordingTitle = document.getElementById('currentRecordingTitle');
+  const currentRecordingId = document.getElementById('currentRecordingId');
+  const currentRecordingTime = document.getElementById('currentRecordingTime');
+  const currentTranscript = document.getElementById('currentTranscript');
   
-    // Audio player elements
-    const audioPlayer = document.getElementById('audioPlayer');
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const rewindBtn = document.getElementById('rewindBtn');
-    const forwardBtn = document.getElementById('forwardBtn');
-    const muteBtn = document.getElementById('muteBtn');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const audioProgress = document.getElementById('audioProgress');
-    const progressContainer = document.querySelector('.progress');
-    const currentTimeDisplay = document.getElementById('currentTime');
-    const durationDisplay = document.getElementById('duration');
+  // Channel control elements
+  const allChannelBtn = document.getElementById('allChannelBtn');
+  const inChannelBtn = document.getElementById('inChannelBtn');
+  const outChannelBtn = document.getElementById('outChannelBtn');
+  
+  // Filter elements
+  const dateRangePicker = document.getElementById('dateRange');
+  const campaignFilter = document.getElementById('campaignFilter');
+  const responseFilter = document.getElementById('responseFilter');
+  const durationFilter = document.getElementById('durationFilter');
+  const applyFiltersBtn = document.getElementById('applyFilters');
+  const resetFiltersBtn = document.getElementById('resetFilters');
+  const searchInput = document.getElementById('searchRecordings');
+  const searchButton = document.getElementById('searchButton');
+  
+  // Pagination elements
+  const startRecord = document.getElementById('startRecord');
+  const endRecord = document.getElementById('endRecord');
+  const totalRecords = document.getElementById('totalRecords');
+  
+  // Initialize date picker
+  flatpickr(dateRangePicker, {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    defaultDate: [new Date().setDate(new Date().getDate() - 7), new Date()],
+    maxDate: "today"
+  });
+  
+  // Global variables for state
+  let allRecordings = [];
+  let filteredRecordings = [];
+  let currentPage = 1;
+  let recordsPerPage = 25;
+  let currentRecording = null;
+  let currentChannel = 'all'; // 'all', 'in', or 'out'
+  
+  // Fetch and store all recordings
+  async function fetchRecordings() {
+    connectionStatus.className = 'badge bg-warning';
+    connectionStatus.textContent = 'Connecting...';
     
-    // Recording info elements
-    const currentRecordingTitle = document.getElementById('currentRecordingTitle');
-    const currentRecordingId = document.getElementById('currentRecordingId');
-    const currentRecordingTime = document.getElementById('currentRecordingTime');
-    const currentTranscript = document.getElementById('currentTranscript');
-    
-    // Initialize global variables
-    let currentRecording = null;
-    let selectedRecordings = [];
-    
-    // Audio player functionality
-    playPauseBtn.addEventListener('click', togglePlayPause);
-    rewindBtn.addEventListener('click', rewindAudio);
-    forwardBtn.addEventListener('click', forwardAudio);
-    muteBtn.addEventListener('click', toggleMute);
-    volumeSlider.addEventListener('input', adjustVolume);
-    progressContainer.addEventListener('click', seekAudio);
-    
-    audioPlayer.addEventListener('timeupdate', updateProgress);
-    audioPlayer.addEventListener('loadedmetadata', () => {
-      durationDisplay.textContent = formatTime(audioPlayer.duration);
-    });
-    audioPlayer.addEventListener('ended', () => {
-      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-      audioProgress.style.width = '0%';
-      currentTimeDisplay.textContent = '0:00';
-    });
-    
-    // Function to toggle play/pause
-    function togglePlayPause() {
-      if (audioPlayer.paused) {
-        audioPlayer.play();
-        playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-      } else {
-        audioPlayer.pause();
-        playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    try {
+      // Fetch available folders from the proxy server
+      const foldersResponse = await fetch(`${PROXY_URL}folders`);
+      if (!foldersResponse.ok) {
+        throw new Error('Failed to fetch recordings directories');
       }
-    }
-    
-    // Function to rewind audio
-    function rewindAudio() {
-      audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 5);
-    }
-    
-    // Function to forward audio
-    function forwardAudio() {
-      audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 5);
-    }
-    
-    // Function to toggle mute
-    function toggleMute() {
-      audioPlayer.muted = !audioPlayer.muted;
-      if (audioPlayer.muted) {
-        muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
-        volumeSlider.disabled = true;
-      } else {
-        muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
-        volumeSlider.disabled = false;
-      }
-    }
-    
-    // Function to adjust volume
-    function adjustVolume() {
-      audioPlayer.volume = volumeSlider.value / 100;
-      if (audioPlayer.volume === 0) {
-        muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
-      } else if (audioPlayer.volume < 0.5) {
-        muteBtn.innerHTML = '<i class="bi bi-volume-down"></i>';
-      } else {
-        muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
-      }
-    }
-    
-    // Function to seek audio
-    function seekAudio(e) {
-      const progressWidth = progressContainer.clientWidth;
-      const clickPosition = e.offsetX;
-      const seekTime = (clickPosition / progressWidth) * audioPlayer.duration;
-      audioPlayer.currentTime = seekTime;
-    }
-    
-    // Function to update progress bar
-    function updateProgress() {
-      const percentage = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-      audioProgress.style.width = percentage + '%';
-      currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
-    }
-    
-    // Function to format time (seconds to mm:ss)
-    function formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = Math.floor(seconds % 60);
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-  
-    // Function to format duration for display in table
-    function formatDuration(seconds) {
-      return `${seconds}s`;
-    }
-    
-    // Function to play a recording
-    function playRecording(recording) {
-      // In a real application, this would set the audio source to the actual recording
-      // For this demo, we'll simulate it
-      audioPlayer.src = recording.audio_url || 'dummy.mp3';
       
-      // Update current recording info
-      currentRecordingTitle.textContent = `${recording.response_category} - ${recording.agent}`;
-      currentRecordingId.textContent = `ID: ${recording.unique_id}`;
-      currentRecordingTime.textContent = `Time: ${recording.timestamp}`;
-      currentTranscript.textContent = recording.speech_text || 'No transcript available.';
+      const foldersData = await foldersResponse.json();
+      const folders = foldersData.folders || [];
       
-      // Highlight the currently playing recording in the table
-      const rows = document.querySelectorAll('#recordingsTable tbody tr');
-      rows.forEach(row => row.classList.remove('playing-row'));
-      document.querySelector(`#recordingsTable tbody tr[data-id="${recording.id}"]`)?.classList.add('playing-row');
+      // Sort folders by date (newest first)
+      folders.sort().reverse();
       
-      // Reset player UI
-      audioProgress.style.width = '0%';
-      currentTimeDisplay.textContent = '0:00';
-      durationDisplay.textContent = formatTime(recording.duration);
+      // Limit to just the latest few folders to avoid too many requests
+      const recentFolders = folders.slice(0, 7); // Last week's worth
       
-      // Set volume
-      audioPlayer.volume = volumeSlider.value / 100;
+      // Modified: Skip main directory files and only process folder files
+      let allFiles = [];
       
-      // Set current recording
-      currentRecording = recording;
-      
-      // Start playing
-      audioPlayer.load();
-      
-      // For demo purposes, we'll simulate loading time
-      setTimeout(() => {
-        // When real audio is available, this would happen naturally after loading
-        audioPlayer.play();
-        playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-      }, 500);
-    }
-  
-    // Populate the table with recordings
-    function populateTable(recordings) {
-      const tableBody = document.querySelector('#recordingsTable tbody');
-      tableBody.innerHTML = '';
-  
-      recordings.forEach(recording => {
-        const row = document.createElement('tr');
-        row.setAttribute('data-id', recording.id);
-        
-        // Apply badge class based on response category
-        let badgeClass = 'bg-secondary'; // Default
-        switch(recording.response_category) {
-          case 'INTERESTED':
-            badgeClass = 'bg-success';
-            break;
-          case 'NOT_INTERESTED':
-            badgeClass = 'bg-danger';
-            break;
-          case 'DO_NOT_CALL':
-            badgeClass = 'bg-danger';
-            break;
-          case 'DNQ':
-            badgeClass = 'bg-warning';
-            break;
-          case 'UNKNOWN':
-            badgeClass = 'bg-dark';
-            break;
-          case 'ANSWER_MACHINE':
-            badgeClass = 'bg-secondary';
-            break;
-        }
-        
-        row.innerHTML = `
-          <td>${recording.id}</td>
-          <td>${recording.unique_id}</td>
-          <td>${recording.timestamp}</td>
-          <td>${formatDuration(recording.duration)}</td>
-          <td><span class="badge ${badgeClass}">${recording.response_category}</span></td>
-          <td>${recording.agent}</td>
-          <td>
-            <div class="btn-group btn-group-sm">
-              <button type="button" class="btn btn-outline-primary action-btn play-recording" title="Play" data-id="${recording.id}">
-                <i class="bi bi-play-fill"></i>
-              </button>
-              <button type="button" class="btn btn-outline-secondary action-btn" title="Download" data-id="${recording.id}">
-                <i class="bi bi-download"></i>
-              </button>
-              <button type="button" class="btn btn-outline-danger action-btn" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" data-id="${recording.id}">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </td>
-        `;
-        
-        tableBody.appendChild(row);
-      });
-  
-      // Add event listeners for play buttons
-      document.querySelectorAll('.play-recording').forEach(button => {
-        button.addEventListener('click', function() {
-          const recordingId = parseInt(this.getAttribute('data-id'));
-          const recording = callRecordings.find(rec => rec.id === recordingId);
-          if (recording) {
-            playRecording(recording);
+      for (const folder of recentFolders) {
+        try {
+          const folderName = folder.replace('/', ''); // Remove trailing slash
+          const folderResponse = await fetch(`${PROXY_URL}folder-files/${folderName}`);
+          
+          if (!folderResponse.ok) {
+            console.warn(`Skipping folder ${folder} - not accessible`);
+            continue;
           }
-        });
-      });
-    }
-  
-    // Initial population of the table
-    populateTable(callRecordings);
-    
-    // Update summary counts
-    document.getElementById('totalRecords').textContent = callRecordings.length;
-    document.getElementById('startRecord').textContent = '1';
-    document.getElementById('endRecord').textContent = Math.min(25, callRecordings.length);
-  
-    // Filter functionality
-    const applyFiltersBtn = document.getElementById('applyFilters');
-    const resetFiltersBtn = document.getElementById('resetFilters');
-    
-    applyFiltersBtn.addEventListener('click', function() {
-      // In a real application, this would make an API call with the filter values
-      // For demo purposes, we'll just simulate filtering
-      
-      const campaignFilter = document.getElementById('campaignFilter').value;
-      const responseFilter = document.getElementById('responseFilter').value;
-      const durationFilter = document.getElementById('durationFilter').value;
-      
-      let filteredRecordings = [...callRecordings];
-      
-      if (responseFilter !== 'all') {
-        filteredRecordings = filteredRecordings.filter(recording => recording.response_category === responseFilter);
-      }
-      
-      if (durationFilter !== 'all') {
-        switch(durationFilter) {
-          case 'short':
-            filteredRecordings = filteredRecordings.filter(recording => recording.duration < 10);
-            break;
-          case 'medium':
-            filteredRecordings = filteredRecordings.filter(recording => recording.duration >= 10 && recording.duration <= 30);
-            break;
-          case 'long':
-            filteredRecordings = filteredRecordings.filter(recording => recording.duration > 30);
-            break;
+          
+          const folderData = await folderResponse.json();
+          const folderFiles = (folderData.files || []).map(file => ({
+            filename: file.filename,
+            path: `${PROXY_URL}audio/${folderName}/${file.filename}`,
+            date: extractDateFromFilename(file.filename),
+            phoneNumber: extractPhoneFromFilename(file.filename),
+            type: extractTypeFromFilename(file.filename),
+            fileId: extractIdFromFilename(file.filename)
+          }));
+          
+          // Group folder files by their fileId
+          const groupedFolderFiles = groupFilesByCallId(folderFiles);
+          allFiles = [...allFiles, ...groupedFolderFiles];
+          
+        } catch (error) {
+          console.error(`Error fetching files from folder ${folder}:`, error);
         }
       }
       
-      populateTable(filteredRecordings);
+      // Sort all files by date (newest first)
+      allFiles.sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      // Update summary counts
-      document.getElementById('totalRecords').textContent = filteredRecordings.length;
-      document.getElementById('startRecord').textContent = filteredRecordings.length > 0 ? '1' : '0';
-      document.getElementById('endRecord').textContent = Math.min(25, filteredRecordings.length);
+      // Generate display data for each recording
+      allRecordings = allFiles.map((file, index) => ({
+        id: index + 1,
+        unique_id: file.fileId,
+        timestamp: formatDate(file.date),
+        duration: '00:20', // Placeholder, would need audio metadata
+        response_category: randomResponseCategory(), // Placeholder, would need backend data
+        agent: 'Agent', // Placeholder, would need backend data
+        paths: {
+          all: file.paths.all || (file.paths.in ? file.paths.in : file.paths.out),
+          in: file.paths.in,
+          out: file.paths.out
+        },
+        phoneNumber: file.phoneNumber
+      }));
       
-      // Show filter feedback
-      const toast = `
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
-          <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-              <strong class="me-auto">Filters Applied</strong>
-              <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-              Showing ${filteredRecordings.length} recordings matching your criteria.
-            </div>
-          </div>
-        </div>
+      // Update connection status
+      connectionStatus.className = 'badge bg-success';
+      connectionStatus.textContent = 'Connected';
+      
+      // Update total records count
+      totalRecords.textContent = allRecordings.length;
+      
+      // Filter and display recordings
+      filterAndDisplayRecordings();
+      
+    } catch (error) {
+      console.error('Error fetching recordings:', error);
+      connectionStatus.className = 'badge bg-danger';
+      connectionStatus.textContent = 'Disconnected';
+      recordingsError.classList.remove('d-none');
+      
+      // Create some sample data for demo purposes
+      createSampleData();
+    }
+  }
+  
+  // Extract date from filename
+  function extractDateFromFilename(filename) {
+    const dateMatch = filename.match(/(\d{8})-\d{6}/);
+    if (dateMatch && dateMatch[1]) {
+      const dateStr = dateMatch[1];
+      const year = dateStr.slice(0, 4);
+      const month = dateStr.slice(4, 6);
+      const day = dateStr.slice(6, 8);
+      return `${year}-${month}-${day}`;
+    }
+    return 'Unknown Date';
+  }
+  
+  // Extract phone number from filename
+  function extractPhoneFromFilename(filename) {
+    const phoneMatch = filename.match(/\d{8}-\d{6}_(\d+)-/);
+    return phoneMatch && phoneMatch[1] ? phoneMatch[1] : 'Unknown';
+  }
+  
+  // Extract file type (in, out, all) from filename
+  function extractTypeFromFilename(filename) {
+    const typeMatch = filename.match(/-([a-z]+)\.wav$/);
+    return typeMatch && typeMatch[1] ? typeMatch[1] : 'unknown';
+  }
+  
+  // Extract unique call ID from filename
+  function extractIdFromFilename(filename) {
+    const idMatch = filename.match(/(\d{8}-\d{6}_\d+)-/);
+    return idMatch && idMatch[1] ? idMatch[1] : filename;
+  }
+  
+  // Group files by their call ID
+  function groupFilesByCallId(files) {
+    const grouped = {};
+    
+    files.forEach(file => {
+      if (!grouped[file.fileId]) {
+        grouped[file.fileId] = {
+          fileId: file.fileId,
+          date: file.date,
+          phoneNumber: file.phoneNumber,
+          paths: {}
+        };
+      }
+      
+      // Add file path based on type
+      grouped[file.fileId].paths[file.type] = file.path;
+    });
+    
+    return Object.values(grouped);
+  }
+  
+  // Format date for display
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+  
+  // Random response category for demo
+  function randomResponseCategory() {
+    const categories = [
+      'ANSWER_MACHINE', 'INTERESTED', 'NOT_INTERESTED', 
+      'DO_NOT_CALL', 'DNQ', 'UNKNOWN'
+    ];
+    return categories[Math.floor(Math.random() * categories.length)];
+  }
+  
+  // Filter and display recordings based on current filters
+  function filterAndDisplayRecordings() {
+    const campaignValue = campaignFilter.value;
+    const responseValue = responseFilter.value;
+    const durationValue = durationFilter.value;
+    const dateRangeValue = dateRangePicker.value;
+    const searchValue = searchInput.value.toLowerCase();
+    
+    // Start with all recordings
+    filteredRecordings = [...allRecordings];
+    
+    // Apply date range filter if specified
+    if (dateRangeValue) {
+      const [startDate, endDate] = dateRangeValue.split(' to ').map(d => d ? new Date(d) : null);
+      
+      if (startDate && endDate) {
+        // Set to beginning and end of days for inclusive comparison
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+        
+        filteredRecordings = filteredRecordings.filter(rec => {
+          const recDate = new Date(rec.timestamp);
+          return recDate >= startDate && recDate <= endDate;
+        });
+      }
+    }
+    
+    // Apply response category filter if specified
+    if (responseValue !== 'all') {
+      filteredRecordings = filteredRecordings.filter(rec => 
+        rec.response_category === responseValue
+      );
+    }
+    
+    // Apply duration filter if specified
+    if (durationValue !== 'all') {
+      // Convert duration string to seconds for comparison
+      const getDurationSeconds = (durationStr) => {
+        const parts = durationStr.split(':');
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      };
+      
+      filteredRecordings = filteredRecordings.filter(rec => {
+        const durationSeconds = getDurationSeconds(rec.duration);
+        
+        switch (durationValue) {
+          case 'short':
+            return durationSeconds < 10;
+          case 'medium':
+            return durationSeconds >= 10 && durationSeconds <= 30;
+          case 'long':
+            return durationSeconds > 30;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Apply search filter if there's a search term
+    if (searchValue) {
+      filteredRecordings = filteredRecordings.filter(rec => 
+        rec.unique_id.toLowerCase().includes(searchValue) ||
+        rec.phoneNumber.toLowerCase().includes(searchValue) ||
+        rec.timestamp.toLowerCase().includes(searchValue) ||
+        rec.response_category.toLowerCase().includes(searchValue)
+      );
+    }
+    
+    // Update pagination info
+    totalRecords.textContent = filteredRecordings.length;
+    
+    // Display records for current page
+    displayRecordings();
+  }
+  
+  // Display recordings for the current page
+  function displayRecordings() {
+    const tbody = recordingsTable.querySelector('tbody');
+    tbody.innerHTML = '';
+    
+    // Calculate start and end indices for current page
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const endIndex = Math.min(startIndex + recordsPerPage, filteredRecordings.length);
+    
+    // Update pagination display
+    startRecord.textContent = filteredRecordings.length > 0 ? startIndex + 1 : 0;
+    endRecord.textContent = endIndex;
+    totalRecords.textContent = filteredRecordings.length;
+    
+    // Create table rows for each recording in current page
+    for (let i = startIndex; i < endIndex; i++) {
+      const recording = filteredRecordings[i];
+      
+      // Create response category badge
+      let badgeClass = 'bg-secondary';
+      switch (recording.response_category) {
+        case 'INTERESTED':
+          badgeClass = 'bg-success';
+          break;
+        case 'NOT_INTERESTED':
+          badgeClass = 'bg-danger';
+          break;
+        case 'DO_NOT_CALL':
+          badgeClass = 'bg-danger';
+          break;
+        case 'DNQ':
+          badgeClass = 'bg-warning';
+          break;
+        case 'UNKNOWN':
+          badgeClass = 'bg-dark';
+          break;
+      }
+      
+      // Create table row
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${recording.id}</td>
+        <td>${recording.unique_id}</td>
+        <td>${recording.timestamp}</td>
+        <td>${recording.duration}</td>
+        <td><span class="badge ${badgeClass}">${recording.response_category}</span></td>
+        <td>${recording.agent}</td>
+        <td>
+          <button class="btn btn-sm btn-primary play-recording" data-index="${i}">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" title="Download">
+            <i class="bi bi-download"></i>
+          </button>
+        </td>
       `;
       
-      const toastContainer = document.createElement('div');
-      toastContainer.innerHTML = toast;
-      document.body.appendChild(toastContainer);
-      
-      setTimeout(() => {
-        document.body.removeChild(toastContainer);
-      }, 3000);
-    });
-    
-    resetFiltersBtn.addEventListener('click', function() {
-      document.getElementById('recordingsFilters').reset();
-      populateTable(callRecordings);
-      
-      // Reset date range picker
-      flatpickr("#dateRange", {
-        mode: "range",
-        dateFormat: "Y-m-d",
-        defaultDate: [new Date().setDate(new Date().getDate() - 7), new Date()],
-        maxDate: "today"
-      });
-      
-      // Reset summary counts
-      document.getElementById('totalRecords').textContent = callRecordings.length;
-      document.getElementById('startRecord').textContent = '1';
-      document.getElementById('endRecord').textContent = Math.min(25, callRecordings.length);
-    });
-  
-    // Search functionality
-    const searchInput = document.getElementById('searchRecordings');
-    const searchButton = document.getElementById('searchButton');
-    
-    function performSearch() {
-      const searchTerm = searchInput.value.toLowerCase();
-      
-      if (searchTerm.trim() === '') {
-        populateTable(callRecordings);
-        return;
-      }
-      
-      const searchResults = callRecordings.filter(recording => {
-        return (
-          recording.unique_id.toLowerCase().includes(searchTerm) ||
-          recording.response_category.toLowerCase().includes(searchTerm) ||
-          recording.agent.toLowerCase().includes(searchTerm) ||
-          recording.speech_text.toLowerCase().includes(searchTerm)
-        );
-      });
-      
-      populateTable(searchResults);
-      
-      // Update summary counts
-      document.getElementById('totalRecords').textContent = searchResults.length;
-      document.getElementById('startRecord').textContent = searchResults.length > 0 ? '1' : '0';
-      document.getElementById('endRecord').textContent = Math.min(25, searchResults.length);
+      tbody.appendChild(row);
     }
     
-    searchButton.addEventListener('click', performSearch);
-    searchInput.addEventListener('keyup', function(e) {
-      if (e.key === 'Enter') {
-        performSearch();
-      }
-    });
-  
-    // Sorting functionality
-    const sortableHeaders = document.querySelectorAll('.sortable');
-    let currentSort = { column: 'id', direction: 'asc' };
-    
-    sortableHeaders.forEach(header => {
-      header.addEventListener('click', function() {
-        const column = this.getAttribute('data-sort');
-        
-        // Toggle direction if clicking the same column
-        if (currentSort.column === column) {
-          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          currentSort.column = column;
-          currentSort.direction = 'asc';
-        }
-        
-        // Remove sort indicators from all headers
-        sortableHeaders.forEach(h => {
-          h.classList.remove('sorted-asc', 'sorted-desc');
-        });
-        
-        // Add sort indicator to current header
-        this.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
-        
-        // Sort the recordings
-        const sortedRecordings = [...callRecordings].sort((a, b) => {
-          let valueA = a[column];
-          let valueB = b[column];
-          
-          // Handle numeric values
-          if (!isNaN(Number(valueA)) && !isNaN(Number(valueB))) {
-            valueA = Number(valueA);
-            valueB = Number(valueB);
-          } 
-          // Handle string values
-          else if (typeof valueA === 'string' && typeof valueB === 'string') {
-            valueA = valueA.toLowerCase();
-            valueB = valueB.toLowerCase();
-          }
-          
-          if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
-          if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-        
-        populateTable(sortedRecordings);
+    // Add event listeners to play buttons
+    document.querySelectorAll('.play-recording').forEach(button => {
+      button.addEventListener('click', function() {
+        const index = parseInt(this.getAttribute('data-index'));
+        playRecording(filteredRecordings[index]);
       });
     });
+    
+    // Update pagination controls
+    updatePagination();
+  }
   
-    // Delete recording functionality
-    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+  // Update pagination controls
+  function updatePagination() {
+    const pagination = document.querySelector('.pagination');
+    const totalPages = Math.ceil(filteredRecordings.length / recordsPerPage);
     
-    deleteConfirmModal.addEventListener('show.bs.modal', function(event) {
-      const button = event.relatedTarget;
-      const recordingId = button.getAttribute('data-id');
-      
-      document.getElementById('deleteRecordingId').textContent = recordingId;
-    });
+    let paginationHTML = `
+      <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="prev">Previous</a>
+      </li>
+    `;
     
-    document.getElementById('confirmDelete').addEventListener('click', function() {
-      const recordingId = parseInt(document.getElementById('deleteRecordingId').textContent);
-      
-      // Remove the recording from our "database"
-      const recordingIndex = callRecordings.findIndex(r => r.id === recordingId);
-      
-      if (recordingIndex !== -1) {
-        // If the deleted recording is currently playing, stop it
-        if (currentRecording && currentRecording.id === recordingId) {
-          audioPlayer.pause();
-          audioPlayer.src = '';
-          currentRecordingTitle.textContent = 'No recording selected';
-          currentRecordingId.textContent = 'ID: --';
-          currentRecordingTime.textContent = 'Time: --';
-          currentTranscript.textContent = 'No transcript available.';
-          playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-          currentRecording = null;
-        }
-        
-        callRecordings.splice(recordingIndex, 1);
-        
-        // Close the modal
-        const modal = bootstrap.Modal.getInstance(deleteConfirmModal);
-        modal.hide();
-        
-        // Refresh the table
-        populateTable(callRecordings);
-        
-        // Update pagination info
-        document.getElementById('totalRecords').textContent = callRecordings.length;
-        document.getElementById('endRecord').textContent = Math.min(25, callRecordings.length);
-        
-        // Show success message
-        const toast = `
-          <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
-            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-              <div class="toast-header bg-danger text-white">
-                <strong class="me-auto">Deleted</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-              </div>
-              <div class="toast-body">
-                Recording #${recordingId} has been deleted successfully.
-              </div>
-            </div>
-          </div>
-        `;
-        
-        const toastContainer = document.createElement('div');
-        toastContainer.innerHTML = toast;
-        document.body.appendChild(toastContainer);
-        
-        setTimeout(() => {
-          document.body.removeChild(toastContainer);
-        }, 3000);
-      }
-    });
-  
-    // Refresh button functionality
-    document.getElementById('refreshBtn').addEventListener('click', function() {
-      // In a real application, this would fetch fresh data from the server
-      populateTable(callRecordings);
-      
-      const now = new Date();
-      const formattedDate = formatDate(now);
-      document.getElementById('lastUpdated').textContent = formattedDate;
-      
-      // Add animation to show refresh action
-      this.querySelector('i').classList.add('animate-spin');
-      setTimeout(() => {
-        this.querySelector('i').classList.remove('animate-spin');
-      }, 500);
-    });
+    // Calculate which page numbers to show
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
     
-    // Format date for last updated
-    function formatDate(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const seconds = String(date.getSeconds()).padStart(2, '0');
-      
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    // Ensure we show at least 5 pages if available
+    if (endPage - startPage < 4 && totalPages > 5) {
+      startPage = Math.max(1, endPage - 4);
     }
     
-    // Pagination functionality
-    const paginationLinks = document.querySelectorAll('.pagination .page-link');
+    // Generate page number links
+    for (let i = startPage; i <= endPage; i++) {
+      paginationHTML += `
+        <li class="page-item ${i === currentPage ? 'active' : ''}">
+          <a class="page-link" href="#" data-page="${i}">${i}</a>
+        </li>
+      `;
+    }
     
-    paginationLinks.forEach(link => {
+    paginationHTML += `
+      <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="next">Next</a>
+      </li>
+    `;
+    
+    pagination.innerHTML = paginationHTML;
+    
+    // Add event listeners to pagination links
+    document.querySelectorAll('.page-link').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
         
-        // In a real application, this would fetch a specific page of data
-        // For demo purposes, we'll just show the same data
+        const page = this.getAttribute('data-page');
         
-        // Update active page
-        document.querySelector('.page-item.active').classList.remove('active');
-        this.closest('.page-item').classList.add('active');
+        if (page === 'prev') {
+          if (currentPage > 1) {
+            currentPage--;
+            displayRecordings();
+          }
+        } else if (page === 'next') {
+          if (currentPage < totalPages) {
+            currentPage++;
+            displayRecordings();
+          }
+        } else {
+          currentPage = parseInt(page);
+          displayRecordings();
+        }
       });
     });
+  }
+  
+  // Play a recording
+  function playRecording(recording) {
+    // Stop any current playback
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    
+    // Update current recording reference
+    currentRecording = recording;
+    
+    // Update player display information
+    currentRecordingTitle.textContent = `Call with ${recording.phoneNumber}`;
+    currentRecordingId.textContent = `ID: ${recording.unique_id}`;
+    currentRecordingTime.textContent = `Time: ${recording.timestamp}`;
+    currentTranscript.textContent = "No transcript available.";
+    
+    // Set proper audio source based on selected channel
+    updateAudioSource();
+    
+    // Update play button icon
+    playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+    
+    // Start playback
+    audioPlayer.play().catch(error => {
+      console.error('Error playing audio:', error);
+      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    });
+    
+    // Highlight the current playing recording in the table
+    document.querySelectorAll('tbody tr').forEach(row => {
+      row.classList.remove('playing-row');
+    });
+    
+    const playingButtons = document.querySelectorAll(`.play-recording[data-index]`);
+    for (let button of playingButtons) {
+      const index = button.getAttribute('data-index');
+      if (filteredRecordings[index].id === recording.id) {
+        button.closest('tr').classList.add('playing-row');
+        break;
+      }
+    }
+  }
+  
+  // Update audio source based on selected channel
+  function updateAudioSource() {
+    if (!currentRecording) return;
+    
+    let sourcePath;
+    
+    // Select the appropriate audio file based on channel selection
+    switch (currentChannel) {
+      case 'in':
+        sourcePath = currentRecording.paths.in || currentRecording.paths.all;
+        break;
+      case 'out':
+        sourcePath = currentRecording.paths.out || currentRecording.paths.all;
+        break;
+      default: // 'all'
+        sourcePath = currentRecording.paths.all || 
+                    (currentRecording.paths.in ? currentRecording.paths.in : currentRecording.paths.out);
+    }
+    
+    // Set the source and load the audio
+    if (sourcePath) {
+      audioPlayer.src = sourcePath;
+      audioPlayer.load();
+    } else {
+      console.warn('No audio source available for the selected channel');
+    }
+  }
+  
+  // Format time display (e.g., 0:00)
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+  
+  // Create sample data for demo if fetching fails
+  function createSampleData() {
+    allRecordings = [];
+    
+    // Generate sample data with unique timestamps
+    const now = new Date();
+    
+    for (let i = 0; i < 246; i++) {
+      const recordTime = new Date(now);
+      recordTime.setMinutes(now.getMinutes() - i * 5); // Each record 5 minutes apart
+      
+      allRecordings.push({
+        id: i + 1,
+        unique_id: `20250304-1050${i % 60}_${8166640800 + i}`,
+        timestamp: formatDate(recordTime),
+        duration: `00:${Math.floor(Math.random() * 59).toString().padStart(2, '0')}`,
+        response_category: randomResponseCategory(),
+        agent: `Agent ${Math.floor(i / 10) + 1}`,
+        paths: {
+          all: null,
+          in: null,
+          out: null
+        },
+        phoneNumber: `${8166640800 + i}`
+      });
+    }
+    
+    // Filter and display the sample data
+    filterAndDisplayRecordings();
+  }
+  
+  // Audio player event listeners
+  playPauseBtn.addEventListener('click', function() {
+    if (audioPlayer.paused) {
+      audioPlayer.play();
+      this.innerHTML = '<i class="bi bi-pause-fill"></i>';
+    } else {
+      audioPlayer.pause();
+      this.innerHTML = '<i class="bi bi-play-fill"></i>';
+    }
   });
+  
+  rewindBtn.addEventListener('click', function() {
+    audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+  });
+  
+  forwardBtn.addEventListener('click', function() {
+    audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 10);
+  });
+  
+  muteBtn.addEventListener('click', function() {
+    if (audioPlayer.muted) {
+      audioPlayer.muted = false;
+      this.innerHTML = '<i class="bi bi-volume-up"></i>';
+    } else {
+      audioPlayer.muted = true;
+      this.innerHTML = '<i class="bi bi-volume-mute"></i>';
+    }
+  });
+  
+  volumeSlider.addEventListener('input', function() {
+    audioPlayer.volume = this.value / 100;
+    
+    // Update mute button icon based on volume
+    if (this.value == 0) {
+      audioPlayer.muted = true;
+      muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
+    } else {
+      audioPlayer.muted = false;
+      muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
+    }
+  });
+  
+  // Audio progress bar updates
+  audioPlayer.addEventListener('timeupdate', function() {
+    if (isNaN(audioPlayer.duration)) return;
+    
+    const progressPercent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+    audioProgress.style.width = `${progressPercent}%`;
+    currentTime.textContent = formatTime(audioPlayer.currentTime);
+  });
+  
+  audioPlayer.addEventListener('loadedmetadata', function() {
+    duration.textContent = formatTime(audioPlayer.duration);
+  });
+  
+  audioPlayer.addEventListener('ended', function() {
+    playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    audioProgress.style.width = '0%';
+  });
+  
+  // Progress bar click for seeking
+  document.querySelector('.progress').addEventListener('click', function(e) {
+    if (audioPlayer.readyState > 0) {
+      const percent = e.offsetX / this.offsetWidth;
+      audioPlayer.currentTime = percent * audioPlayer.duration;
+    }
+  });
+  
+  // Channel control buttons
+  allChannelBtn.addEventListener('click', function() {
+    setActiveChannel('all');
+  });
+  
+  inChannelBtn.addEventListener('click', function() {
+    setActiveChannel('in');
+  });
+  
+  outChannelBtn.addEventListener('click', function() {
+    setActiveChannel('out');
+  });
+  
+  // Set active channel and update UI
+  function setActiveChannel(channel) {
+    // Update active button
+    document.querySelectorAll('.channel-controls .btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    
+    // Set selected channel
+    currentChannel = channel;
+    
+    // Update active class on appropriate button
+    switch (channel) {
+      case 'in':
+        inChannelBtn.classList.add('active');
+        break;
+      case 'out':
+        outChannelBtn.classList.add('active');
+        break;
+      default:
+        allChannelBtn.classList.add('active');
+    }
+    
+    // If there's a current recording, update the source
+    if (currentRecording) {
+      const isPlaying = !audioPlayer.paused;
+      const currentPosition = audioPlayer.currentTime;
+      
+      // Update the audio source
+      updateAudioSource();
+      
+      // Restore playback position after source change
+      audioPlayer.addEventListener('loadedmetadata', function onLoaded() {
+        audioPlayer.currentTime = currentPosition;
+        if (isPlaying) {
+          audioPlayer.play();
+        }
+        audioPlayer.removeEventListener('loadedmetadata', onLoaded);
+      });
+    }
+  }
+  
+  // Filter button event listeners
+  applyFiltersBtn.addEventListener('click', function() {
+    filterAndDisplayRecordings();
+  });
+  
+  resetFiltersBtn.addEventListener('click', function() {
+    // Reset all filter inputs
+    dateRangePicker._flatpickr.clear();
+    campaignFilter.value = '001'; // Default value from HTML
+    responseFilter.value = 'all';
+    durationFilter.value = 'all';
+    searchInput.value = '';
+    
+    // Reset to first page
+    currentPage = 1;
+    
+    // Apply reset filters
+    filterAndDisplayRecordings();
+  });
+  
+  // Search functionality
+  searchButton.addEventListener('click', function() {
+    // Reset to first page when searching
+    currentPage = 1;
+    filterAndDisplayRecordings();
+  });
+  
+  searchInput.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+      currentPage = 1;
+      filterAndDisplayRecordings();
+    }
+  });
+  
+  // Records per page change event
+  document.getElementById('recordsPerPage').addEventListener('change', function() {
+    recordsPerPage = parseInt(this.value);
+    currentPage = 1; // Reset to first page
+    displayRecordings();
+  });
+  
+  // Refresh button
+  document.getElementById('refreshBtn').addEventListener('click', function() {
+    fetchRecordings();
+    
+    // Update last updated timestamp
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = formatDate(now);
+    
+    // Add animation to show refresh action
+    this.querySelector('i').classList.add('animate-spin');
+    setTimeout(() => {
+      this.querySelector('i').classList.remove('animate-spin');
+    }, 500);
+  });
+  
+  // Initialize by fetching recordings
+  fetchRecordings();
+});

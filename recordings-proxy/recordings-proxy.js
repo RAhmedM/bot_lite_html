@@ -76,6 +76,7 @@ app.get('/api/folder-files/:folder', async (req, res) => {
     $('a[href]').each((i, element) => {
       const href = $(element).attr('href');
       // Match WAV file pattern with in/out/all suffix
+      //
       if (href.match(/^[\w\d-]+_[\d]+-(?:in|out|all)\.wav$/)) {
         files.push({
           filename: href,

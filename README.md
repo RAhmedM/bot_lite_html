@@ -12,21 +12,18 @@ This guide will help you set up the call recordings feature for your XDial Netwo
 
 ### 1. Set Up the Proxy Server
 
-1. Create a new directory for the proxy server:
+1. Go to the directory for the proxy server:
    ```bash
-   mkdir xdial-recordings-proxy
-   cd xdial-recordings-proxy
+   cd recordings-proxy
    ```
 
-2. Create the package.json file (or copy the provided one) and install dependencies:
+2. install dependencies:
    ```bash
-   # Copy the package.json file provided
    npm install
    ```
 
-3. Create the recordings-proxy.js file (or copy the provided one)
 
-4. Start the proxy server:
+3. Start the proxy server:
    ```bash
    npm start
    ```

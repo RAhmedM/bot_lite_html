@@ -423,9 +423,6 @@ const recordingsData = [
             <button type="button" class="btn btn-outline-secondary action-btn download-recording" title="Download" data-id="${recording.id}">
               <i class="bi bi-download"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger action-btn" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" data-id="${recording.id}">
-              <i class="bi bi-trash"></i>
-            </button>
           </div>
         </td>
       `;

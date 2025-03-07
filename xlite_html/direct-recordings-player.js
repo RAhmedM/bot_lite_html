@@ -314,7 +314,8 @@ function playRecording(recording) {
     audioUrl = recording.audio_url;
   }
   
-  // Update player UI before loading
+  // Update player UI
+  audioPlayer.src = audioUrl;
   if (currentRecordingTitle) currentRecordingTitle.textContent = `Recording ${recording.unique_id}`;
   if (currentRecordingId) currentRecordingId.textContent = `ID: ${recording.unique_id}`;
   if (currentRecordingTime) currentRecordingTime.textContent = `Time: ${recording.timestamp}`;
@@ -330,74 +331,30 @@ function playRecording(recording) {
   if (inChannelBtn) inChannelBtn.disabled = !recording.channelUrls || !recording.channelUrls['in'];
   if (outChannelBtn) outChannelBtn.disabled = !recording.channelUrls || !recording.channelUrls['out'];
   
-  // Show loading indicator
-  playPauseBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-  showToast('Loading', 'Loading audio file...', 'info');
-  
   // Set volume from slider
   audioPlayer.volume = volumeSlider ? (volumeSlider.value / 100) : 1;
   
-  // Reset any previous sources and errors
-  audioPlayer.pause();
-  audioPlayer.src = '';
-  
-  // Set audio loading timeout (10 seconds)
-  const loadingTimeout = setTimeout(() => {
-    // If we're still in loading state after timeout, switch to fallback
-    if (playPauseBtn.innerHTML === '<i class="bi bi-hourglass-split"></i>') {
-      showToast('Loading Timeout', 'Audio file took too long to load. Using fallback.', 'warning');
-      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-      audioPlayer.src = 'assets/audio/sample-call.mp3';
-    }
-  }, 10000);
-  
-  // Set up audio events for this specific loading operation
-  const loadHandler = () => {
-    clearTimeout(loadingTimeout);
-    playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-  };
-  
-  const errorHandler = (error) => {
-    clearTimeout(loadingTimeout);
-    console.error('Error loading audio:', error);
-    playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-    showToast('Audio Error', 'Could not load audio file. Using fallback.', 'warning');
-    audioPlayer.src = 'assets/audio/sample-call.mp3';
-  };
-  
-  // Add temporary event listeners for this loading operation
-  audioPlayer.addEventListener('loadeddata', loadHandler, { once: true });
-  audioPlayer.addEventListener('error', errorHandler, { once: true });
-  
-  // Set the source and begin loading
-  audioPlayer.src = audioUrl;
+  // Load the audio
   audioPlayer.load();
   
-  // Try to play only after a short delay to allow the browser to start loading
-  setTimeout(() => {
-    const playPromise = audioPlayer.play();
-    
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          clearTimeout(loadingTimeout);
-          playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-          showToast('Playing', `Now playing: ${recording.unique_id}`, 'success');
-        })
-        .catch(error => {
-          // This catch will handle play() errors, not loading errors
-          console.error('Error playing audio:', error);
-          playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-          
-          // Handle autoplay policy issues
-          if (error.name === 'NotAllowedError') {
-            showToast('Autoplay Blocked', 'Browser blocked autoplay. Click play to listen.', 'warning');
-          } else {
-            showToast('Playback Error', error.message || 'Unknown error playing audio', 'danger');
-          }
-        });
-    }
-  }, 100);
+  // Play with error handling
+  const playPromise = audioPlayer.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+      })
+      .catch(error => {
+        console.error('Error playing audio:', error);
+        playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+        
+        if (error.name === 'NotSupportedError' || error.name === 'NotAllowedError') {
+          showToast('Audio Error', 'Cannot play audio from this source due to browser security restrictions.', 'warning');
+        } else {
+          showToast('Audio Error', `Error playing recording: ${error.message}`, 'danger');
+        }
+      });
+  }
 }
 
 // Add this variable to control local vs. remote data

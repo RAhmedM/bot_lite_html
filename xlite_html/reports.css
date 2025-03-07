@@ -1,0 +1,250 @@
+/* Additional styles for the Reports page */
+
+/* Active nav styling */
+
+.chart-container {
+    position: relative;
+    height: 400px !important; /* Fixed height */
+    min-height: 300px;
+    max-height: 600px;
+    padding: 10px;
+    width: 100%;
+  }
+  
+  /* Ensure canvas doesn't grow beyond container */
+  .chart-container canvas {
+    max-height: 100%;
+  }
+      
+.sidebar-nav .nav-link.active {
+    background-color: var(--primary);
+    color: white;
+  }
+  
+  /* Table styling */
+  .table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--background);
+    z-index: 10;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: var(--accent);
+  }
+  
+  /* Badge styling for response categories */
+  .badge.bg-success {
+    background-color: #22c55e !important;
+  }
+  
+  .badge.bg-danger {
+    background-color: #ef4444 !important;
+  }
+  
+  .badge.bg-warning {
+    background-color: #f59e0b !important;
+  }
+  
+  .badge.bg-secondary {
+    background-color: #6c757d !important;
+  }
+  
+  .badge.bg-dark {
+    background-color: #212529 !important;
+  }
+  
+  /* Sortable headers */
+  .sortable {
+    cursor: pointer;
+    position: relative;
+  }
+  
+  .sortable:hover {
+    background-color: var(--accent);
+  }
+  
+  .sortable::after {
+    content: "⇵";
+    opacity: 0.3;
+    margin-left: 5px;
+  }
+  
+  .sorted-asc::after {
+    content: "↑";
+    opacity: 1;
+  }
+  
+  .sorted-desc::after {
+    content: "↓";
+    opacity: 1;
+  }
+  
+  /* Filter card styling */
+  #filtersCollapse {
+    transition: all 0.3s ease;
+  }
+  
+  /* Date picker styling */
+  .flatpickr-calendar {
+    background-color: var(--background);
+    border-color: var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .flatpickr-day {
+    color: var(--foreground);
+  }
+  
+  .flatpickr-day.selected {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+  
+  .flatpickr-day:hover {
+    background-color: var(--accent);
+  }
+  
+  .dark .flatpickr-calendar {
+    background-color: var(--background);
+    border-color: var(--border);
+  }
+  
+  .dark .flatpickr-day {
+    color: var(--foreground);
+  }
+  
+  .dark .flatpickr-day.selected {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+  
+  .dark .flatpickr-day:hover {
+    background-color: var(--accent);
+  }
+  
+  /* Toast notifications */
+  .toast {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .toast-header {
+    border-bottom: 1px solid var(--border);
+  }
+  
+  /* Spin animation for refresh */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-spin {
+    animation: spin 0.5s linear;
+  }
+  
+  /* Modal styling */
+  .modal-content {
+    background-color: var(--background);
+    border-color: var(--border);
+  }
+  
+  .modal-header {
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .modal-footer {
+    border-top: 1px solid var(--border);
+  }
+  
+  /* Form styling */
+  .form-control, .form-select {
+    background-color: var(--background);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+  
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+  }
+  
+  /* List group styling */
+  .list-group-item {
+    background-color: var(--background);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+  
+  /* Status dots for response types */
+  .status-dot.bg-success {
+    background-color: #22c55e;
+  }
+  
+  .status-dot.bg-danger {
+    background-color: #ef4444;
+  }
+  
+  .status-dot.bg-warning {
+    background-color: #f59e0b;
+  }
+  
+  .status-dot.bg-secondary {
+    background-color: #6c757d;
+  }
+  
+  .status-dot.bg-dark {
+    background-color: #212529;
+  }
+  
+  /* Audio player styling */
+  audio {
+    border-radius: var(--radius);
+    width: 100%;
+  }
+  
+  /* Responsive styles for mobile */
+  @media (max-width: 768px) {
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+    
+    .card-header > div:last-child {
+      margin-top: 0.5rem;
+      width: 100%;
+    }
+    
+    .input-group {
+      width: 100%;
+    }
+    
+    .pagination {
+      margin-top: 1rem;
+    }
+  }
+  
+  /* Fix pagination on small screens */
+  @media (max-width: 576px) {
+    .card-footer {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .card-footer > div {
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  /* Ensure all action buttons are visible on mobile */
+  @media (max-width: 768px) {
+    .table td:last-child {
+      white-space: nowrap;
+    }
+  }

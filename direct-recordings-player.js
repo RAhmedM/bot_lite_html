@@ -1,3 +1,123 @@
+// Skip forward or backward
+function skipAudio(seconds) {
+  if (audioPlayer.readyState > 0) {
+    audioPlayer.currentTime = Math.max(0, Math.min(audioPlayer.duration, audioPlayer.currentTime + seconds));
+  }
+}
+
+// Toggle mute
+function toggleMute() {
+  audioPlayer.muted = !audioPlayer.muted;
+  if (audioPlayer.muted) {
+    muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
+  } else {
+    muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
+  }
+}
+
+// Adjust volume
+function adjustVolume() {
+  audioPlayer.volume = volumeSlider.value / 100;
+  if (audioPlayer.volume === 0) {
+    muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
+  } else if (audioPlayer.volume < 0.5) {
+    muteBtn.innerHTML = '<i class="bi bi-volume-down"></i>';
+  } else {
+    muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
+  }
+}
+
+// Seek in the audio timeline
+function seekAudio(e) {
+  if (audioPlayer.readyState > 0) {
+    const rect = progressContainer.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / progressContainer.offsetWidth;
+    audioPlayer.currentTime = pos * audioPlayer.duration;
+  }
+}
+
+// Update the progress bar
+function updateProgress() {
+  if (audioPlayer.duration) {
+    const percentage = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+    audioProgress.style.width = `${percentage}%`;
+    currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
+  }
+}
+
+// Update duration display when metadata is loaded
+function updateDuration() {
+  durationDisplay.textContent = formatTime(audioPlayer.duration);
+}
+
+// Handle audio ended event
+function handleAudioEnded() {
+  playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+}
+
+// Handle audio error with better reporting
+function handleAudioError() {
+  console.error('Audio error:', audioPlayer.error);
+  
+  // Display detailed error information
+  let errorMsg = 'Could not play this recording.';
+  if (audioPlayer.error) {
+    switch(audioPlayer.error.code) {
+      case 1: errorMsg = 'Audio fetching aborted.'; break;
+      case 2: errorMsg = 'Network error while loading audio.'; break;
+      case 3: errorMsg = 'Error decoding audio file.'; break;
+      case 4: errorMsg = 'Audio format not supported or file not found.'; break;
+    }
+  }
+  
+  // If we're on HTTPS and URL is HTTP, mention mixed content
+  if (window.location.protocol === 'https:' && currentRecording && 
+      currentRecording.audio_url && currentRecording.audio_url.startsWith('http:')) {
+    errorMsg += ' This may be due to security restrictions (mixed content).';
+  }
+  
+  showToast('Audio Error', `${errorMsg}`, 'warning');
+  
+  // Don't immediately try the fallback - this would create a loop
+  // Instead, set UI back to play state
+  playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+}
+
+// Switch audio channel (in/out/all) with improved error handling
+function switchChannel(channel) {
+  if (!currentRecording) return;
+
+  // Update active button
+  if (allChannelBtn) allChannelBtn.classList.toggle('active', channel === 'all');
+  if (inChannelBtn) inChannelBtn.classList.toggle('active', channel === 'in');
+  if (outChannelBtn) outChannelBtn.classList.toggle('active', channel === 'out');
+  
+  // Save current playback state
+  const wasPlaying = !audioPlayer.paused;
+  const currentTime = audioPlayer.currentTime;
+  
+  // Update channel and source
+  currentChannel = channel;
+  
+  // Restart playback with the new channel
+  playRecording(currentRecording);
+  
+  // After the new audio loads, restore position
+  audioPlayer.addEventListener('loadedmetadata', function onceLoaded() {
+    audioPlayer.removeEventListener('loadedmetadata', onceLoaded);
+    
+    if (currentTime > 0 && currentTime < audioPlayer.duration) {
+      audioPlayer.currentTime = currentTime;
+    }
+    
+    // Only auto-play if it was already playing
+    if (!wasPlaying) {
+      audioPlayer.pause();
+      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    }
+  }, { once: true });
+}
+
 /**
  * Enhanced populateTable with better event handling
  */
@@ -63,51 +183,6 @@ function populateTable(recordings) {
   
   // Setup download buttons with enhanced functionality
   setupDownloadButtons(recordings);
-}
-
-/**
- * Enhanced download button functionality with HTTPS handling
- */
-function setupDownloadButtons(recordings) {
-  document.querySelectorAll('.download-recording').forEach(button => {
-    button.addEventListener('click', function() {
-      const recordingId = parseInt(this.getAttribute('data-id'));
-      const recording = recordings.find(rec => rec.id === recordingId);
-      
-      if (recording) {
-        let downloadUrl = getAudioUrl(recording);
-        
-        if (!downloadUrl) {
-          showToast('Download Error', 'No valid download URL found for this recording.', 'danger');
-          return;
-        }
-        
-        // For HTTPS sites trying to download HTTP content
-        if (window.location.protocol === 'https:' && downloadUrl.startsWith('http:')) {
-          showToast('Download Warning', 'Browser may block download due to security settings. Trying HTTPS version.', 'warning');
-          downloadUrl = downloadUrl.replace('http:', 'https:');
-        }
-        
-        // Show download in progress toast
-        showToast('Download Started', 'Preparing download, please wait...', 'info');
-        
-        // Create a hidden anchor element for the download
-        const downloadLink = document.createElement('a');
-        downloadLink.href = downloadUrl;
-        downloadLink.download = `recording-${recording.unique_id}.mp3`;
-        
-        // Attach to body, click, and remove
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        
-        // Show success toast after a short delay
-        setTimeout(() => {
-          showToast('Download Complete', `Recording ${recording.unique_id} download initiated.`, 'success');
-        }, 1000);
-      }
-    });
-  });
 }
 
 /**
@@ -323,7 +398,7 @@ function showToast(title, message, type = 'info') {
     document.body.removeChild(toastContainer);
   }, 3000);
 }/**
- * XDial Networks Direct Recording Player - Fixed Version
+ * XDial Networks Direct Recording Player - Render.com Compatible Version
  * 
  * This script handles playing recordings directly from the server
  * with dynamic loading from API endpoint, with fixes for CORS and HTTPS issues.
@@ -517,8 +592,7 @@ function getSampleRecordingData() {
 }
 
 /**
- * Transform the API response data to the format expected by the application
- * With improved security and URL handling
+ * Transform the API response data with Render.com compatibility fixes
  * @param {Object} apiData - Raw API response data
  * @returns {Array} - Transformed recording data
  */
@@ -545,12 +619,29 @@ function transformRecordingData(apiData) {
     // Generate a unique ID combining date, time and number
     const uniqueId = `${item.date}-${item.time}_${item.number}`;
     
-    // Process audio URL to handle HTTPS/HTTP issues
-    let audioUrl = item.url;
+    // Get the original audio URL
+    const originalUrl = item.url;
     
-    // If we're in HTTPS mode and the URL is HTTP, try to convert it
-    if (window.location.protocol === 'https:' && audioUrl.startsWith('http:')) {
-      audioUrl = audioUrl.replace('http:', 'https:');
+    // Create a download-friendly URL
+    let downloadUrl = originalUrl;
+    
+    // Create a suitable playback URL based on the environment
+    let playbackUrl = originalUrl;
+    
+    // Check if we're running on Render.com or another HTTPS host
+    if (window.location.protocol === 'https:') {
+      // For Render.com deployment, use a CORS proxy
+      
+      // OPTION 1: Use AllOrigins proxy (reliable)
+      playbackUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(originalUrl);
+      
+      // OPTION 2: Use CORS.sh proxy (alternative)
+      // playbackUrl = 'https://cors.sh/' + originalUrl;
+      
+      // OPTION 3: Use CORS Anywhere (more limited)
+      // playbackUrl = 'https://cors-anywhere.herokuapp.com/' + originalUrl;
+      
+      console.log('Using CORS proxy for HTTPS compatibility:', playbackUrl);
     }
     
     // Return transformed record
@@ -561,12 +652,13 @@ function transformRecordingData(apiData) {
       duration: durationInSeconds,
       agent: 'system',
       speech_text: "", // No transcript in API response
-      audio_url: audioUrl,
+      audio_url: playbackUrl,
+      download_url: downloadUrl, // Original URL for downloads
       number: item.number,
       channelUrls: {
-        all: audioUrl,
-        in: audioUrl,
-        out: audioUrl
+        all: playbackUrl,
+        in: playbackUrl,
+        out: playbackUrl
       }
     };
   });
@@ -627,8 +719,7 @@ function loadRecordings(date = '2025-03-04') {
 }
 
 /**
- * Complete rewrite of the playRecording function with multiple fallbacks
- * and compatibility fixes for different environments
+ * Complete rewrite of the playRecording function with Render.com compatibility
  */
 function playRecording(recording) {
   if (!recording) return;
@@ -660,6 +751,10 @@ function playRecording(recording) {
     })
     .catch(error => {
       console.log('Source elements playback failed:', error);
+      return tryPlayWithAudioContext(recording);
+    })
+    .catch(error => {
+      console.log('AudioContext playback failed:', error);
       return playFallbackAudio();
     })
     .catch(error => {
@@ -691,17 +786,12 @@ function updatePlayerUI(recording) {
 }
 
 /**
- * Attempt to play using direct Audio element src attribute
+ * Attempt to play using direct Audio element src attribute - Render.com compatible
  */
 function tryPlayWithAudioElement(recording) {
   return new Promise((resolve, reject) => {
     // Determine which audio URL to use
     let audioUrl = getAudioUrl(recording);
-    
-    // Try HTTPS version first if we're on HTTPS
-    if (window.location.protocol === 'https:' && audioUrl.startsWith('http:')) {
-      audioUrl = audioUrl.replace('http:', 'https:');
-    }
     
     console.log('Trying to play audio with direct src:', audioUrl);
     
@@ -726,7 +816,7 @@ function tryPlayWithAudioElement(recording) {
       audioPlayer.removeEventListener('playing', loadHandler);
       audioPlayer.removeEventListener('error', errorHandler);
       reject(new Error('Playback timeout'));
-    }, 5000);
+    }, 10000); // Increased timeout for proxy services
     
     // Set source and play
     audioPlayer.src = audioUrl;
@@ -762,11 +852,6 @@ function tryPlayWithSourceElements(recording) {
     // Determine which audio URL to use
     let audioUrl = getAudioUrl(recording);
     
-    // Try HTTPS version first if we're on HTTPS
-    if (window.location.protocol === 'https:' && audioUrl.startsWith('http:')) {
-      audioUrl = audioUrl.replace('http:', 'https:');
-    }
-    
     // Create source elements for different formats
     const sourceMP3 = document.createElement('source');
     sourceMP3.src = audioUrl;
@@ -796,7 +881,7 @@ function tryPlayWithSourceElements(recording) {
       audioPlayer.removeEventListener('playing', loadHandler);
       audioPlayer.removeEventListener('error', errorHandler);
       reject(new Error('Source elements playback timeout'));
-    }, 5000);
+    }, 10000); // Increased timeout for proxy services
     
     // Try to load and play
     audioPlayer.load();
@@ -811,6 +896,89 @@ function tryPlayWithSourceElements(recording) {
           reject(error);
         });
     }
+  });
+}
+
+/**
+ * Play audio with AudioContext for better compatibility
+ * This is an alternative approach when regular audio element doesn't work
+ */
+function tryPlayWithAudioContext(recording) {
+  return new Promise((resolve, reject) => {
+    // Feature detection
+    if (!window.AudioContext && !window.webkitAudioContext) {
+      reject(new Error('AudioContext not supported in this browser'));
+      return;
+    }
+    
+    showToast('Compatibility', 'Trying AudioContext playback method...', 'info');
+    console.log('Attempting to play with AudioContext API');
+    
+    // Get the audio URL
+    const audioUrl = getAudioUrl(recording);
+    
+    // Create audio context
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContextClass();
+    let source = null;
+    
+    // Set timeout to avoid hanging
+    const timeout = setTimeout(() => {
+      if (source) {
+        source.disconnect();
+      }
+      if (audioContext.state !== 'closed') {
+        audioContext.close();
+      }
+      reject(new Error('AudioContext playback timeout'));
+    }, 15000);
+    
+    // Fetch the audio file
+    fetch(audioUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.arrayBuffer();
+      })
+      .then(arrayBuffer => {
+        // Decode the audio data
+        return audioContext.decodeAudioData(arrayBuffer);
+      })
+      .then(audioBuffer => {
+        // Create a buffer source node
+        source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        
+        // Connect to destination (speakers)
+        source.connect(audioContext.destination);
+        
+        // Play the audio
+        source.start(0);
+        playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        clearTimeout(timeout);
+        
+        // Update the UI
+        showToast('Playing', `Now playing: ${recording.unique_id}`, 'success');
+        
+        // Handle completion
+        source.onended = () => {
+          playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+          if (audioContext.state !== 'closed') {
+            audioContext.close();
+          }
+        };
+        
+        resolve();
+      })
+      .catch(error => {
+        console.error('AudioContext playback error:', error);
+        clearTimeout(timeout);
+        if (audioContext.state !== 'closed') {
+          audioContext.close();
+        }
+        reject(error);
+      });
   });
 }
 
@@ -875,6 +1043,62 @@ function getAudioUrl(recording) {
   }
   
   return audioUrl;
+}
+
+/**
+ * Setup download buttons with special handling for HTTPS environments
+ */
+function setupDownloadButtons(recordings) {
+  document.querySelectorAll('.download-recording').forEach(button => {
+    button.addEventListener('click', function() {
+      const recordingId = parseInt(this.getAttribute('data-id'));
+      const recording = recordings.find(rec => rec.id === recordingId);
+      
+      if (recording) {
+        // For downloads, use the original URL rather than the proxied one
+        // This opens in a new tab for the user to handle the download
+        let downloadUrl = recording.download_url || recording.audio_url;
+        
+        if (!downloadUrl) {
+          showToast('Download Error', 'No valid download URL found for this recording.', 'danger');
+          return;
+        }
+        
+        // For HTTPS sites, warn about mixed content
+        if (window.location.protocol === 'https:' && downloadUrl.startsWith('http:')) {
+          showToast('Download Notice', 'Audio will open in a new tab for download due to security restrictions', 'info');
+          window.open(downloadUrl, '_blank');
+          return;
+        }
+        
+        // Regular download attempt
+        try {
+          // Show download in progress toast
+          showToast('Download Started', 'Preparing download, please wait...', 'info');
+          
+          // Create a hidden anchor element for the download
+          const downloadLink = document.createElement('a');
+          downloadLink.href = downloadUrl;
+          downloadLink.download = `recording-${recording.unique_id}.mp3`;
+          downloadLink.target = '_blank'; // Open in new tab as fallback
+          
+          // Attach to body, click, and remove
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          // Show success toast after a short delay
+          setTimeout(() => {
+            showToast('Download Complete', `Recording ${recording.unique_id} download initiated.`, 'success');
+          }, 1000);
+        } catch (e) {
+          console.error('Download error:', e);
+          // Fallback to opening in new tab
+          window.open(downloadUrl, '_blank');
+        }
+      }
+    });
+  });
 }
 
 // Initialize audio player controls
@@ -971,124 +1195,4 @@ function togglePlayPause() {
     audioPlayer.pause();
     playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
   }
-}
-
-// Skip forward or backward
-function skipAudio(seconds) {
-  if (audioPlayer.readyState > 0) {
-    audioPlayer.currentTime = Math.max(0, Math.min(audioPlayer.duration, audioPlayer.currentTime + seconds));
-  }
-}
-
-// Toggle mute
-function toggleMute() {
-  audioPlayer.muted = !audioPlayer.muted;
-  if (audioPlayer.muted) {
-    muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
-  } else {
-    muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
-  }
-}
-
-// Adjust volume
-function adjustVolume() {
-  audioPlayer.volume = volumeSlider.value / 100;
-  if (audioPlayer.volume === 0) {
-    muteBtn.innerHTML = '<i class="bi bi-volume-mute"></i>';
-  } else if (audioPlayer.volume < 0.5) {
-    muteBtn.innerHTML = '<i class="bi bi-volume-down"></i>';
-  } else {
-    muteBtn.innerHTML = '<i class="bi bi-volume-up"></i>';
-  }
-}
-
-// Seek in the audio timeline
-function seekAudio(e) {
-  if (audioPlayer.readyState > 0) {
-    const rect = progressContainer.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / progressContainer.offsetWidth;
-    audioPlayer.currentTime = pos * audioPlayer.duration;
-  }
-}
-
-// Update the progress bar
-function updateProgress() {
-  if (audioPlayer.duration) {
-    const percentage = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-    audioProgress.style.width = `${percentage}%`;
-    currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
-  }
-}
-
-// Update duration display when metadata is loaded
-function updateDuration() {
-  durationDisplay.textContent = formatTime(audioPlayer.duration);
-}
-
-// Handle audio ended event
-function handleAudioEnded() {
-  playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-}
-
-// Handle audio error with better reporting
-function handleAudioError() {
-  console.error('Audio error:', audioPlayer.error);
-  
-  // Display detailed error information
-  let errorMsg = 'Could not play this recording.';
-  if (audioPlayer.error) {
-    switch(audioPlayer.error.code) {
-      case 1: errorMsg = 'Audio fetching aborted.'; break;
-      case 2: errorMsg = 'Network error while loading audio.'; break;
-      case 3: errorMsg = 'Error decoding audio file.'; break;
-      case 4: errorMsg = 'Audio format not supported or file not found.'; break;
-    }
-  }
-  
-  // If we're on HTTPS and URL is HTTP, mention mixed content
-  if (window.location.protocol === 'https:' && currentRecording && 
-      currentRecording.audio_url && currentRecording.audio_url.startsWith('http:')) {
-    errorMsg += ' This may be due to security restrictions (mixed content).';
-  }
-  
-  showToast('Audio Error', `${errorMsg}`, 'warning');
-  
-  // Don't immediately try the fallback - this would create a loop
-  // Instead, set UI back to play state
-  playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-}
-
-// Switch audio channel (in/out/all) with improved error handling
-function switchChannel(channel) {
-  if (!currentRecording) return;
-
-  // Update active button
-  if (allChannelBtn) allChannelBtn.classList.toggle('active', channel === 'all');
-  if (inChannelBtn) inChannelBtn.classList.toggle('active', channel === 'in');
-  if (outChannelBtn) outChannelBtn.classList.toggle('active', channel === 'out');
-  
-  // Save current playback state
-  const wasPlaying = !audioPlayer.paused;
-  const currentTime = audioPlayer.currentTime;
-  
-  // Update channel and source
-  currentChannel = channel;
-  
-  // Restart playback with the new channel
-  playRecording(currentRecording);
-  
-  // After the new audio loads, restore position
-  audioPlayer.addEventListener('loadedmetadata', function onceLoaded() {
-    audioPlayer.removeEventListener('loadedmetadata', onceLoaded);
-    
-    if (currentTime > 0 && currentTime < audioPlayer.duration) {
-      audioPlayer.currentTime = currentTime;
-    }
-    
-    // Only auto-play if it was already playing
-    if (!wasPlaying) {
-      audioPlayer.pause();
-      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-    }
-  }, { once: true });
 }

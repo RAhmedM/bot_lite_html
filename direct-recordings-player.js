@@ -633,13 +633,11 @@ function transformRecordingData(apiData) {
       // For Render.com deployment, use a CORS proxy
       
       // OPTION 1: Use AllOrigins proxy (reliable)
-      playbackUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(originalUrl);
+      // playbackUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(originalUrl);
       
       // OPTION 2: Use CORS.sh proxy (alternative)
-      // playbackUrl = 'https://cors.sh/' + originalUrl;
+      playbackUrl = 'https://cors.sh/' + originalUrl;
       
-      // OPTION 3: Use CORS Anywhere (more limited)
-      // playbackUrl = 'https://cors-anywhere.herokuapp.com/' + originalUrl;
       
       console.log('Using CORS proxy for HTTPS compatibility:', playbackUrl);
     }

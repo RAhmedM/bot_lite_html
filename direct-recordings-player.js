@@ -180,6 +180,7 @@ function getSampleRecordingData() {
 
 /**
  * Transform the API response data to the format expected by the application
+ * with URL protocol fix for HTTPS deployments
  * @param {Object} apiData - Raw API response data
  * @returns {Array} - Transformed recording data
  */
@@ -196,8 +197,6 @@ function transformRecordingData(apiData) {
     const minute = item.time.substring(2, 4);
     const second = item.time.substring(4, 6);
     
-
-    console.log(hour)
     // Parse duration (format: "00:00:31")
     const durationParts = item.duration.split(':');
     const durationInSeconds = 
@@ -208,6 +207,18 @@ function transformRecordingData(apiData) {
     // Generate a unique ID combining date, time and number
     const uniqueId = `${item.date}-${item.time}_${item.number}`;
     
+    // FIX: Convert HTTP URLs to HTTPS or use a proxy if needed
+    let audioUrl = item.url;
+    
+    // Option 1: Try to convert HTTP to HTTPS if possible
+    if (audioUrl && audioUrl.startsWith('http://')) {
+      // Try to use HTTPS instead - this might work if the server supports it
+      audioUrl = audioUrl.replace('http://', 'https://');
+    }
+    
+    // Option 2: Use a CORS proxy (for development/testing only)
+    // audioUrl = 'https://cors-anywhere.herokuapp.com/' + item.url;
+    
     // Return transformed record without response_category
     return {
       id: parseInt(key),
@@ -216,12 +227,12 @@ function transformRecordingData(apiData) {
       duration: durationInSeconds,
       agent: 'system',
       speech_text: "", // No transcript in API response
-      audio_url: item.url,
+      audio_url: audioUrl,
       number: item.number,
       channelUrls: {
-        all: item.url,
-        in: item.url,
-        out: item.url
+        all: audioUrl,
+        in: audioUrl,
+        out: audioUrl
       }
     };
   });

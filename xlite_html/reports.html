@@ -109,24 +109,15 @@
                     <div class="card-body">
                         <form id="reportFilters">
                             <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Date Range</label>
+                                <div class="col-md-6">
+                                    <label class="form-label">Date</label>
                                     <div class="input-group">
-                                        <input type="text" class="form-control date-range-picker"
-                                            placeholder="Select dates" id="dateRange">
+                                        <input type="text" class="form-control date-picker"
+                                            placeholder="Select date" id="dateFilter">
                                         <span class="input-group-text"><i class="bi bi-calendar"></i></span>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Campaign</label>
-                                    <select class="form-select" id="campaignFilter">
-                                        <option value="all">All Campaigns</option>
-                                        <option value="001" selected>Stonage Communication</option>
-                                        <option value="002">LMS Outreach</option>
-                                        <option value="003">Customer Service</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label class="form-label">Response Category</label>
                                     <select class="form-select" id="responseFilter">
                                         <option value="all">All Responses</option>
@@ -136,15 +127,6 @@
                                         <option value="DO_NOT_CALL">Do Not Call</option>
                                         <option value="DNQ">DNQ</option>
                                         <option value="UNKNOWN">Unknown</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Agent</label>
-                                    <select class="form-select" id="agentFilter">
-                                        <option value="all">All Agents</option>
-                                        <option value="stone">Stone</option>
-                                        <option value="sarah">Sarah</option>
-                                        <option value="james">James</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
@@ -249,7 +231,6 @@
                                     <th class="sortable" data-sort="speech_text">Speech Text</th>
                                     <th class="sortable" data-sort="response_category">Response Category</th>
                                     <th class="sortable" data-sort="timestamp">Timestamp</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -259,22 +240,6 @@
                                     <td>how are you i am doing will</td>
                                     <td><span class="badge bg-secondary">ANSWER_MACHINE</span></td>
                                     <td>2025-03-04 10:11:40</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button type="button" class="btn btn-outline-secondary" title="Edit"
-                                                data-bs-toggle="modal" data-bs-target="#editRecordModal" data-id="1">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-secondary" title="Listen"
-                                                data-bs-toggle="modal" data-bs-target="#audioPlayerModal" data-id="1">
-                                                <i class="bi bi-headphones"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger" title="Delete"
-                                                data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" data-id="1">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                                 <!-- More rows would be populated dynamically -->
                             </tbody>

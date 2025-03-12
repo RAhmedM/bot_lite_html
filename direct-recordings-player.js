@@ -309,7 +309,7 @@ function setupFilters() {
     // Initialize flatpickr with single date selection
     flatpickr(dateRangePicker, {
       dateFormat: "Y-m-d",
-      defaultDate: "2025-03-04",
+      defaultDate: formattedDate2,
       maxDate: "today",
       disableMobile: "true",
       mode: "single" // Set to single date selection
@@ -321,7 +321,7 @@ function setupFilters() {
     const phoneFilter = document.getElementById('phoneFilter')?.value;
     
     // Get the selected date (already in YYYY-MM-DD format thanks to flatpickr)
-    let dateFilter = '2025-03-04'; // Default date
+    let dateFilter = formattedDate2; // Default date
     if (dateRangeElement && dateRangeElement.value) {
       dateFilter = dateRangeElement.value; // Use the date as is
     }
@@ -359,11 +359,11 @@ function setupFilters() {
     
     // Reset date picker to default value
     if (dateRangePicker && dateRangePicker._flatpickr) {
-      dateRangePicker._flatpickr.setDate('2025-03-04');
+      dateRangePicker._flatpickr.setDate(formattedDate2);
     }
     
     // Load recordings with default date
-    loadRecordings('2025-03-04');
+    loadRecordings(formattedDate2);
   });
 }
 
@@ -426,6 +426,13 @@ let currentRecording = null;
 let currentChannel = 'all'; // Default to all channel
 let recordingsData = []; // Will be populated from API
 
+const date = new Date();
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed, so add 1
+const day = String(date.getDate()).padStart(2, '0');
+const formattedDate2 = `${year}-${month}-${day}`;
+console.log(formattedDate2); // Outputs: 2025-03-09 (current date)
+
 // Initialize the application when the DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize audio player elements
@@ -436,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (dateRangePicker) {
     flatpickr(dateRangePicker, {
       dateFormat: "Y-m-d",
-      defaultDate: "2025-03-04",
+      defaultDate: formattedDate2,
       maxDate: "today",
       disableMobile: "true",
       mode: "single" // Set to single date selection
@@ -444,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Load recordings with default date
-  loadRecordings('2025-03-04');
+  loadRecordings(formattedDate2);
   
   // Set up refresh button
   document.getElementById('refreshBtn').addEventListener('click', function() {
@@ -453,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get current date value from the date picker
     const dateRangeElement = document.getElementById('dateRange');
-    let dateFilter = '2025-03-04'; // Default date
+    let dateFilter = formattedDate2; // Default date
     
     if (dateRangeElement && dateRangeElement.value) {
       dateFilter = dateRangeElement.value; // Use the date as is - YYYY-MM-DD format
@@ -480,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * @param {string} date - Date in YYYY-MM-DD format
  * @returns {Promise} - Promise resolving to recording data
  */
-function fetchRecordingData(date = '2025-03-04') {
+function fetchRecordingData(date = formattedDate2) {
   // IMPORTANT FIX: API requires date without hyphens (YYYYMMDD format)
   // Convert from YYYY-MM-DD to YYYYMMDD
   const formattedDate = date.replace(/-/g, '');
@@ -664,9 +671,9 @@ function transformRecordingData(apiData) {
 
 /**
  * Load recordings data and initialize the player with improved error handling
- * @param {string} date - Date in YYYY-MM-DD format (e.g., '2025-03-04')
+ * @param {string} date - Date in YYYY-MM-DD format (e.g., formattedDate2)
  */
-function loadRecordings(date = '2025-03-04') {
+function loadRecordings(date = formattedDate2) {
   fetchRecordingData(date)
     .then(recordings => {
       // Update global recordings data

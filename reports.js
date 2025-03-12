@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize date picker
-  flatpickr("#dateRange", {
-    mode: "range",
+  // Initialize date picker (modified to be single-date only)
+  flatpickr("#dateFilter", {
     dateFormat: "Y-m-d",
-    defaultDate: [new Date().setDate(new Date().getDate() - 7), new Date()],
+    defaultDate: new Date(),
     maxDate: "today"
   });
 
@@ -420,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Populate the table with data
+  // Populate the table with data - MODIFIED to remove actions column
   function populateTable(records) {
     const tableBody = document.querySelector('#reportTable tbody');
     tableBody.innerHTML = '';
@@ -457,19 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <td>${record.speech_text}</td>
         <td><span class="badge ${badgeClass}">${record.response_category}</span></td>
         <td>${record.timestamp}</td>
-        <td>
-          <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-outline-secondary" title="Edit" data-bs-toggle="modal" data-bs-target="#editRecordModal" data-id="${record.id}">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary" title="Listen" data-bs-toggle="modal" data-bs-target="#audioPlayerModal" data-id="${record.id}">
-              <i class="bi bi-headphones"></i>
-            </button>
-            <button type="button" class="btn btn-outline-danger" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" data-id="${record.id}">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </td>
       `;
       
       tableBody.appendChild(row);
@@ -530,15 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function createMockData() {
     return [
       {"id":"1","unique_id":"12456789799","speech_text":"how are you i am doning willl","response_category":"ANSWER_MACHINE","timestamp":"2025-03-04 10:11:40"},
-      {"id":"2","unique_id":"1741103427.200215","speech_text":"I'm good how are you","response_category":"UNKNOWN","timestamp":"2025-03-04 10:50:48"},
-      {"id":"3","unique_id":"1741103427.200215","speech_text":"yeah I have uh that","response_category":"UNKNOWN","timestamp":"2025-03-04 10:51:06"},
-      {"id":"4","unique_id":"1741103771.200218","speech_text":"I'm good","response_category":"UNKNOWN","timestamp":"2025-03-04 10:56:22"},
-      {"id":"5","unique_id":"1741103771.200218","speech_text":"yes I have active","response_category":"INTERESTED","timestamp":"2025-03-04 10:56:41"},
-      {"id":"6","unique_id":"1741104241.200233","speech_text":"I'm good","response_category":"UNKNOWN","timestamp":"2025-03-04 11:04:13"},
-      {"id":"7","unique_id":"1741104241.200233","speech_text":"yes I have not","response_category":"INTERESTED","timestamp":"2025-03-04 11:04:31"},
-      {"id":"8","unique_id":"1741104433.200248","speech_text":"I'm good","response_category":"UNKNOWN","timestamp":"2025-03-04 11:07:24"},
-      {"id":"9","unique_id":"1741104433.200248","speech_text":"no","response_category":"UNKNOWN","timestamp":"2025-03-04 11:07:42"}
-    ];
+     ];
   }
 
   // Modified fetchDataFromAPI to use mock data as fallback
@@ -560,19 +538,28 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize the dashboard with API data
   initializeDashboard();
 
-  // Filter functionality
+  // Filter functionality - MODIFIED for simplified filters
   const applyFiltersBtn = document.getElementById('applyFilters');
   const resetFiltersBtn = document.getElementById('resetFilters');
   
   applyFiltersBtn.addEventListener('click', function() {
-    const campaignFilter = document.getElementById('campaignFilter').value;
     const responseFilter = document.getElementById('responseFilter').value;
-    const agentFilter = document.getElementById('agentFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
     
     let filteredRecords = [...callRecords];
     
+    // Filter by response if selected
     if (responseFilter !== 'all') {
       filteredRecords = filteredRecords.filter(record => record.response_category === responseFilter);
+    }
+    
+    // Filter by date if selected
+    if (dateFilter) {
+      filteredRecords = filteredRecords.filter(record => {
+        // Extract date part only from timestamp for comparison
+        const recordDate = record.timestamp.split(' ')[0];
+        return recordDate === dateFilter;
+      });
     }
     
     populateTable(filteredRecords);
@@ -588,20 +575,22 @@ document.addEventListener('DOMContentLoaded', function() {
   
   resetFiltersBtn.addEventListener('click', function() {
     document.getElementById('reportFilters').reset();
-    populateTable(callRecords);
     
-    // Reset date range picker
-    flatpickr("#dateRange", {
-      mode: "range",
+    // Reset the date picker
+    flatpickr("#dateFilter", {
       dateFormat: "Y-m-d",
-      defaultDate: [new Date().setDate(new Date().getDate() - 7), new Date()],
+      defaultDate: new Date(),
       maxDate: "today"
     });
     
+    populateTable(callRecords);
+    
     // Reset summary counts
     document.getElementById('totalRecords').textContent = callRecords.length;
-    document.getElementById('startRecord').textContent = '1';
+    document.getElementById('startRecord').textContent = callRecords.length > 0 ? '1' : '0';
     document.getElementById('endRecord').textContent = Math.min(25, callRecords.length);
+    
+    showToast('Filters Reset', 'Showing all records', 'info');
   });
 
   // Search functionality
@@ -686,112 +675,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       populateTable(sortedRecords);
     });
-  });
-
-  // Edit record functionality
-  const editRecordModal = document.getElementById('editRecordModal');
-  
-  editRecordModal.addEventListener('show.bs.modal', function(event) {
-    const button = event.relatedTarget;
-    const recordId = button.getAttribute('data-id');
-    
-    // Find the record by ID
-    const record = callRecords.find(r => r.id === recordId);
-    
-    if (record) {
-      document.getElementById('editRecordId').value = record.id;
-      document.getElementById('editUniqueId').value = record.unique_id;
-      document.getElementById('editSpeechText').value = record.speech_text;
-      document.getElementById('editResponseCategory').value = record.response_category;
-      document.getElementById('editTimestamp').value = record.timestamp;
-    }
-  });
-  
-  document.getElementById('saveRecordChanges').addEventListener('click', function() {
-    const recordId = document.getElementById('editRecordId').value;
-    const speechText = document.getElementById('editSpeechText').value;
-    const responseCategory = document.getElementById('editResponseCategory').value;
-    
-    // Update the record in our "database"
-    const recordIndex = callRecords.findIndex(r => r.id === recordId);
-    
-    if (recordIndex !== -1) {
-      callRecords[recordIndex].speech_text = speechText;
-      callRecords[recordIndex].response_category = responseCategory;
-      
-      // Close the modal
-      const modal = bootstrap.Modal.getInstance(editRecordModal);
-      modal.hide();
-      
-      // Refresh the table
-      populateTable(callRecords);
-      
-      // Update charts and stats since category might have changed
-      processResponseData();
-      
-      // Show success message
-      showToast('Success', `Record #${recordId} has been updated successfully.`, 'success');
-    }
-  });
-
-  // Audio player modal functionality
-  const audioPlayerModal = document.getElementById('audioPlayerModal');
-  
-  audioPlayerModal.addEventListener('show.bs.modal', function(event) {
-    const button = event.relatedTarget;
-    const recordId = button.getAttribute('data-id');
-    
-    // Find the record by ID
-    const record = callRecords.find(r => r.id === recordId);
-    
-    if (record) {
-      document.getElementById('recordingId').textContent = record.unique_id;
-      document.getElementById('recordingTimestamp').textContent = record.timestamp;
-      document.getElementById('recordingTranscript').textContent = record.speech_text;
-      
-      // In a real application, you would set the audio source here
-      // For demo purposes, we'll just show a message that there's no audio
-      const audioElement = audioPlayerModal.querySelector('audio');
-      audioElement.innerHTML = `<p class="text-center text-muted">No audio available for this demo.</p>`;
-    }
-  });
-
-  // Delete record functionality
-  const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-  
-  deleteConfirmModal.addEventListener('show.bs.modal', function(event) {
-    const button = event.relatedTarget;
-    const recordId = button.getAttribute('data-id');
-    
-    document.getElementById('deleteRecordId').textContent = recordId;
-  });
-  
-  document.getElementById('confirmDelete').addEventListener('click', function() {
-    const recordId = document.getElementById('deleteRecordId').textContent;
-    
-    // Remove the record from our "database"
-    const recordIndex = callRecords.findIndex(r => r.id === recordId);
-    
-    if (recordIndex !== -1) {
-      callRecords.splice(recordIndex, 1);
-      
-      // Close the modal
-      const modal = bootstrap.Modal.getInstance(deleteConfirmModal);
-      modal.hide();
-      
-      // Refresh the table
-      populateTable(callRecords);
-      
-      // Update charts and stats
-      processResponseData();
-      
-      // Update pagination info
-      document.getElementById('totalRecords').textContent = callRecords.length;
-      document.getElementById('endRecord').textContent = Math.min(25, callRecords.length);
-      
-      // Show success message
-      showToast('Deleted', `Record #${recordId} has been deleted successfully.`, 'danger');
-    }
   });
 
   // Refresh button functionality
